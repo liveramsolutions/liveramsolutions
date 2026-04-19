@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bi-Directional JSON & CSV Converter</title>
+    <!-- Created by Mark Livera 2026 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 min-h-screen p-4 md:p-8 font-sans text-slate-300">
+    <div class="max-w-5xl mx-auto space-y-6">
+        <header class="text-center">
+            <h1 class="text-3xl font-bold text-yellow-400">Data Format Converter</h1>
+            <p class="text-white-300">Convert instantly between <b>JSON</b> and <b>CSV</b> formats locally.</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- JSON Side -->
+            <div class="space-y-2">
+                <label class="text-sm font-bold text-white-600 uppercase">JSON Data</label>
+                <textarea id="json-input" class="w-full h-80 p-4 border rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm" placeholder='[Paste Data Here]'></textarea>
+                <button onclick="convertToCSV()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition shadow-md">Convert to CSV ⮕</button>
+            </div>
+
+            <!-- CSV Side -->
+            <div class="space-y-2">
+                <label class="text-sm font-bold text-white-600 uppercase">CSV Data</label>
+                <textarea id="csv-input" class="w-full h-80 p-4 border rounded-xl shadow-sm focus:ring-2 focus:ring-emerald-500 outline-none font-mono text-sm" placeholder="[Paste Data Here]"></textarea>
+                <button onclick="convertToJSON()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-medium transition shadow-md">⬅ Convert to JSON</button>
+            </div>
+        </div>
+
+        <div class="flex justify-center gap-4 pt-4">
+            <button onclick="downloadFile('json')" class="text-slate-200 hover:text-blue-600 flex items-center gap-1 text-sm font-semibold">Download .json</button>
+            <span class="text-slate-300">|</span>
+            <button onclick="downloadFile('csv')" class="text-slate-200 hover:text-emerald-600 flex items-center gap-1 text-sm font-semibold">Download .csv</button>
+        </div>
+
+        <footer class="text-center pt-8 border-t">
+            <span class="bg-green-200 text-green-700 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider border border-green-200">
+                🛡️ Private: Processing happens entirely in your browser
+            </span>
+        </footer>
+    </div>
+
+    <script>
+        // --- JSON to CSV ---
+        function convertToCSV() {
+            const input = document.getElementById('json-input').value;
+            const csvOutput = document.getElementById('csv-input');
+            try {
+                const json = JSON.parse(input);
+                const array = Array.isArray(json) ? json : [json];
+                const headers = Object.keys(array[0]);
+                const csvRows = [
+                    headers.join(','),
+                    ...array.map(row => headers.map(fieldName => JSON.stringify(row[fieldName] ?? '')).join(','))
+                ];
+                csvOutput.value = csvRows.join('\n');
+            } catch (e) { alert("Invalid JSON format."); }
+        }
+
+        // --- CSV to JSON (The New Logic) ---
+        function convertToJSON() {
+            const input = document.getElementById('csv-input').value.trim();
+            const jsonOutput = document.getElementById('json-input');
+            if (!input) return alert("Please enter CSV data first.");
+
+            try {
+                const lines = input.split('\n');
+                const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+                const result = lines.slice(1).map(line => {
+                    const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+                    return headers.reduce((obj, header, i) => {
+                        let val = values[i];
+                        // Basic type casting
+                        if (!isNaN(val) && val !== "") val = Number(val);
+                        if (val === "true") val = true;
+                        if (val === "false") val = false;
+                        obj[header] = val ?? null;
+                        return obj;
+                    }, {});
+                });
+                jsonOutput.value = JSON.stringify(result, null, 4);
+            } catch (e) { alert("Error parsing CSV. Ensure the first row has headers."); }
+        }
+
+        function downloadFile(type) {
+            const content = type === 'json' ? document.getElementById('json-input').value : document.getElementById('csv-input').value;
+            if (!content) return alert("No data to download!");
+            const blob = new Blob([content], { type: type === 'json' ? 'application/json' : 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `data.${type}`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

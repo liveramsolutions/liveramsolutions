@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banner Animation</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        .banner {
+            width: 100vw;
+            height: 50px;
+            background-color: rgb(35, 80, 212);
+            position: relative;
+            overflow: hidden;
+        }
+        .banner-text {
+            position: absolute;
+            white-space: nowrap;
+            font-size: 30px;
+            color: #d4af37;
+            top: 50%;
+            transform: translateY(-50%);
+            left: 100%; /* Start text outside the banner (right side) */
+            transition: none; /* Initially no transition */
+        }
+    </style>
+</head>
+<body>
+
+<div class="banner">
+    <div class="banner-text">this is a test concept</div>
+</div>
+
+<script>
+    const bannerText = document.querySelector('.banner-text');
+
+    function startAnimation() {
+        // Immediately reset the text to the right side without transition
+        bannerText.style.transition = 'none';
+        bannerText.style.left = '100%';
+        bannerText.style.transform = 'translate(0, -50%)';
+
+        // Allow a brief delay to reset position before applying the animation
+        setTimeout(() => {
+            // Now enable transition and start the movement to the center
+            bannerText.style.transition = 'left 5s linear';
+            bannerText.style.left = '50%';
+            bannerText.style.transform = 'translate(-50%, -50%)'; // Align it perfectly in the center
+        }, 100); // Short delay to ensure reset is applied
+
+        // After 10 seconds in the center, move the text off to the left
+        setTimeout(() => {
+            bannerText.style.transition = 'left 5s linear'; // Speed for exiting
+            bannerText.style.left = '100%'; // Move text out of view on the left
+
+            setTimeout(() => {
+                // After moving out, wait 5 seconds and restart the cycle
+                startAnimation();
+            }, 10000); // Time it takes to move off to the left
+        }, 10000); // Pause for 10 seconds in the center
+    }
+
+    // Start the animation on page load
+    window.onload = startAnimation;
+</script>
+
+</body>
+</html>

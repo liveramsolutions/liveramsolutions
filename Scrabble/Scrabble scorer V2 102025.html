@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scrabble Scoreboard</title>
+<!-- Created by Mark Livera 2025 -->
+<style>
+body {
+  margin: 0;
+  background-color: #363838;
+  font-family: Arial, sans-serif;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  align-items: center;
+}
+
+header {
+  position: sticky;
+  top: 0;
+  background: #363838;
+  padding: 0.5rem;
+  width: 90%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 1000;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+header .controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  width: 90%;
+  flex: 1;
+  padding-bottom: 1rem;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1200px) {
+  .container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .container {
+    grid-template-columns: 1fr;
+  }
+}
+
+.player {
+  background-color: #003366;
+  border-radius: 15px;
+  padding: 1rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.name-input {
+  margin-bottom: 0.5rem;
+  padding: 0.3rem;
+  border-radius: 5px;
+  border: none;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.player-name {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+  max-width: 100%;
+}
+
+.scrabble-name {
+  display: flex;
+  justify-content: center;
+  gap: 0.2em;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.tile {
+  background: #f5e5c7;
+  border: 0.25em solid #bea779;
+  border-radius: 0.6em;
+  margin: 0.1em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  color: #000;
+  box-shadow: 0.2em 0.2em 0.4em rgba(0,0,0,0.5);
+  position: relative;
+  flex-shrink: 1;
+  width: 50px;
+  height: 50px;
+  font-size: 1rem;
+}
+
+.tile-value {
+  position: absolute;
+  bottom: 0.2em;
+  right: 0.3em;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+.score-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.score {
+  font-size: clamp(1rem, 1.5vw, 1.5rem);
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3em;
+}
+
+.score-input {
+  margin-top: 0.5rem;
+  display: flex;
+  gap: 0.3rem;
+  justify-content: center;
+}
+
+.score-input input {
+  width: 60px;
+  padding: 0.3rem;
+  border-radius: 5px;
+  border: none;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.score-input button {
+  padding: 0.3rem 0.6rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.add-btn { background: #4CAF50; color: white; }
+.remove-btn { background: #f44336; color: white; }
+.edit-name-btn { background: #ffa500; color: white; }
+
+.turns {
+  margin-top: 1rem;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.turns th, .turns td {
+  border-bottom: 1px solid #666;
+  padding: 0.2rem;
+  text-align: center;
+}
+
+.rank {
+  font-size: clamp(0.9rem, 1.2vw, 1.2rem);
+  font-weight: bold;
+  color: gold;
+  margin-right: 0.5em;
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Scrabble Scoreboard</h1>
+  <div class="controls">
+    <label for="numPlayersSelect" style="color:white;">Players:</label>
+    <select id="numPlayersSelect">
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4" selected>4</option>
+    </select>
+    <button id="resetAll">Reset All</button>
+    <button id="exportCSV">Export CSV</button>
+  </div>
+</header>
+
+<div class="container" id="playerContainer"></div>
+
+<script>
+const playerContainer = document.getElementById("playerContainer");
+let players = [];
+
+function createPlayer(index) {
+  const player = document.createElement("div");
+  player.className = "player";
+  player.innerHTML = `
+    <input type="text" class="name-input" placeholder="Enter name">
+    <div class="player-name">
+      <div class="scrabble-name"></div>
+    </div>
+    <div class="score-row">
+      <div class="rank"></div>
+      <div class="score">Score: 0</div>
+    </div>
+    <div class="score-input">
+      <input type="number" class="add-score" placeholder="Score">
+      <button class="add-btn">Add</button>
+      <button class="remove-btn">Undo</button>
+      <button class="edit-name-btn">Edit Name</button>
+    </div>
+    <table class="turns">
+      <thead><tr><th>Turn</th><th>Points</th><th>Total</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  `;
+
+  const nameInput = player.querySelector(".name-input");
+  const scrabbleName = player.querySelector(".scrabble-name");
+  const rankDisplay = player.querySelector(".rank");
+  const scoreDisplay = player.querySelector(".score");
+  const scoreInput = player.querySelector(".add-score");
+  const addButton = player.querySelector(".add-btn");
+  const removeButton = player.querySelector(".remove-btn");
+  const editNameBtn = player.querySelector(".edit-name-btn");
+  const turnsBody = player.querySelector(".turns tbody");
+
+  let totalScore = 0;
+  let turn = 0;
+  const turns = [];
+
+  players.push({ index, get score() { return totalScore; }, rankDisplay });
+
+  function renderName() {
+  scrabbleName.innerHTML = "";
+  const values = {A:1,B:3,C:3,D:2,E:1,F:4,G:2,H:4,I:1,J:8,K:5,L:1,M:3,N:1,O:1,P:3,Q:10,R:1,S:1,T:1,U:1,V:4,W:4,X:8,Y:4,Z:10};
+  const letters = [...nameInput.value.toUpperCase()];
+  const containerWidth = scrabbleName.clientWidth;
+  const gapTotal = (letters.length - 1) * 4;
+  let tileSize = 50;
+  if (letters.length * tileSize + gapTotal > containerWidth) {
+    tileSize = (containerWidth - gapTotal) / letters.length;
+  }
+  
+  letters.forEach(letter => {
+    const tile = document.createElement("div");
+    tile.className = "tile";
+    tile.style.width = tile.style.height = tileSize + "px";
+    tile.style.fontSize = tileSize * 0.4 + "px"; 
+    tile.textContent = letter;
+    
+    if (values[letter] !== undefined) {
+      const val = document.createElement("span");
+      val.className = "tile-value";
+      val.textContent = values[letter];
+      val.style.fontSize = tileSize * 0.2 + "px"; 
+      tile.appendChild(val);
+    }
+    
+    scrabbleName.appendChild(tile);
+  });
+
+  nameInput.style.display = "none";
+}
+
+  function updateRanks() {
+    const sorted = [...players].sort((a,b)=>b.score-a.score);
+    let currentRank = 1;
+    for(let i=0;i<sorted.length;i++){
+      if(i>0 && sorted[i].score<sorted[i-1].score) currentRank=i+1;
+      sorted[i].rankDisplay.textContent = sorted[i].score>0?`#${currentRank}`:"";
+      sorted[i].rankDisplay.style.color = ["gold","silver","#cd7f32"][currentRank-1] || "white";
+    }
+  }
+
+  function addScore() {
+    const val = parseInt(scoreInput.value);
+    if(!isNaN(val) && val>=0){
+      turn++;
+      totalScore += val;
+      turns.push(val);
+      scoreDisplay.textContent = "Score: " + totalScore;
+      const row = document.createElement("tr");
+      row.innerHTML = `<td>${turn}</td><td>${val}</td><td>${totalScore}</td>`;
+      turnsBody.appendChild(row);
+      scoreInput.value = "";
+      updateRanks();
+    }
+  }
+
+  function removeScore() {
+    if(turns.length>0){
+      const last=turns.pop();
+      totalScore-=last;
+      turn--;
+      scoreDisplay.textContent="Score: "+totalScore;
+      turnsBody.removeChild(turnsBody.lastChild);
+      updateRanks();
+    }
+  }
+
+  editNameBtn.addEventListener("click", ()=>{
+    nameInput.style.display="block";
+    scrabbleName.innerHTML="";
+    nameInput.focus();
+  });
+
+  nameInput.addEventListener("keydown", e=>{if(e.key==="Enter"&&nameInput.value.trim()!=="") renderName();});
+  scoreInput.addEventListener("keydown", e=>{if(e.key==="Enter") addScore();});
+  addButton.addEventListener("click", addScore);
+  removeButton.addEventListener("click", removeScore);
+
+  return player;
+}
+
+function renderPlayers(num){
+  playerContainer.innerHTML="";
+  players=[];
+  for(let i=0;i<num;i++){
+    const p=createPlayer(i);
+    playerContainer.appendChild(p);
+  }
+}
+
+const numPlayersSelect=document.getElementById("numPlayersSelect");
+renderPlayers(parseInt(numPlayersSelect.value));
+numPlayersSelect.addEventListener("change", ()=>renderPlayers(parseInt(numPlayersSelect.value)));
+
+document.getElementById("resetAll").addEventListener("click", ()=>location.reload());
+
+document.getElementById("exportCSV").addEventListener("click", ()=>{
+  let csv="Player,Turn,Points,Total\n";
+  document.querySelectorAll(".player").forEach((player,i)=>{
+    const name=player.querySelector(".scrabble-name").textContent||`Player ${i+1}`;
+    player.querySelectorAll(".turns tbody tr").forEach(r=>{
+      csv+=`${name},${r.children[0].textContent},${r.children[1].textContent},${r.children[2].textContent}\n`;
+    });
+  });
+  const blob=new Blob([csv],{type:"text/csv"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="scores.csv"; a.click();
+});
+</script>
+</body>
+</html>

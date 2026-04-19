@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Price Calculator Page</title>
+<!-- Created by Mark Livera 2024 -->
+<link rel="icon" href="Price calculators_files/favicon-256x256.png" type="image/png">
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background-color: #363838;
+    margin: 0;
+    padding: 0px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+.banner {
+    width: 100vw;
+    height: 50px;
+    background: linear-gradient(to left, #2350d4, #0a163a 50%, #2350d4);
+    position: relative;
+    overflow: hidden;
+}
+
+.banner-text {
+    position: absolute;
+    white-space: nowrap;
+    font-family: Calibri, sans-serif;
+    font-size: 35px;
+    color: #d4af37;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 150%;
+    transition: left 20s linear, font-style 0.2s linear;
+    animation: fadeColors 60s infinite paused;
+    animation-fill-mode: none;
+}
+
+@keyframes fadeColors {
+    0.1% { color: #d4af37; }
+    14.28% { color: #ca3030; }
+    28.56% { color: #28b463; }
+    42.84% { color: #bb8fce; }
+    57.12% { color: #d4ac0d; }
+    71.4% { color: #87cefa; }
+    85.68% { color: #f39c12; }
+    99.8% { color: #d4af37; }
+}
+
+.container, .bottom-row {
+    display: grid;
+    grid-template-columns: repeat(3, 450px);
+    grid-gap: 60px;
+    justify-content: center;
+    width: 100%;
+}
+.container { margin-top: 70px; }
+.bottom-row { margin-top: 40px; }
+
+.calculator {
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0px 8px 15px rgba(0,0,0,0.5),0px 0px 15px rgba(2,2,2,0.185);
+    text-align: center;
+    width: 450px;
+    height: 300px;
+    box-sizing: border-box;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    background-color: #fff;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+.calculator:hover {
+    transform: translateY(-10px);
+    box-shadow: 0px 12px 20px rgba(0,0,0,0.7),0px 0px 20px rgba(15,15,15,0.137);
+}
+.calculator h2 {
+    margin-top: 0;
+    font-size: 1.5em;
+    text-align: center;
+    color: #333;
+}
+
+.form-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    width: 100%;
+    position: relative;
+}
+
+.form-group label {
+    font-size: 1.3em;
+    margin-right: 20px;
+    width: 240px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.input-wrapper {
+    position: relative;
+    width: 50%;
+}
+
+.input-wrapper input {
+    width: 100%;
+    padding-left: 25px;
+    padding-right: 10px;
+    height: 40px;
+    box-sizing: border-box;
+    font-size: 1.4em;
+}
+
+.currency-symbol, .percentage-symbol {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.2em;
+    pointer-events: none;
+}
+
+.currency-symbol { left: 10px; }
+.percentage-symbol { right: 10px; }
+
+.result {
+    font-weight: bold;
+    font-size: 1.4em;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.calc1 { background-color: #ca3030; }
+.calc2 { background-color: #28b463; }
+.calc3 { background-color: #bb8fce; }
+.calc4 { background-color: #d4ac0d; }
+.calc5 { background-color: #87cefa; }
+.calc6 { background-color: #f39c12; }
+
+@media (max-width: 1024px) {
+    .container, .bottom-row { grid-template-columns: repeat(2, 450px); gap: 30px; }
+}
+@media (max-width: 768px) {
+    .container, .bottom-row { grid-template-columns: 1fr; gap: 20px; }
+    .calculator { width: 100%; height: auto; }
+}
+</style>
+</head>
+<body>
+
+<div class="banner">
+    <div class="banner-text">Click in the boxes to enter prices or change percentages</div>
+</div>
+
+<div class="container">
+    <!-- Calculator 1 -->
+    <div class="calculator calc1">
+        <h2>Enter Cost & Sell Price Ex GST<br>To Calculate Profit Values</h2>
+
+        <div class="form-group">
+            <label>Sell Price ($):</label>
+            <div class="input-wrapper">
+                <div class="currency-symbol">$</div>
+                <input type="number" id="sellPrice6" step="0.01" oninput="calculateMarginAndDollarValue()">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Cost ($):</label>
+            <div class="input-wrapper">
+                <div class="currency-symbol">$</div>
+                <input type="number" id="cost6" step="0.01" oninput="calculateMarginAndDollarValue()">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="result">Profit (%):</label>
+            <div class="input-wrapper">
+                <div class="percentage-symbol">%</div>
+                <input type="text" id="marginPercentageResult6" readonly>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="result">Profit ($):</label>
+            <div class="input-wrapper">
+                <div class="currency-symbol">$</div>
+                <input type="text" id="marginDollarResult6" readonly>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calculator 2 -->
+    <div class="calculator calc2">
+        <h2>Enter Cost & Discount<br>To calculate Original price</h2>
+
+        <div class="form-group">
+            <label>Cost Price ($):</label>
+            <div class="input-wrapper">
+                <div class="currency-symbol">$</div>
+                <input type="number" id="invoiceCost1" step="0.01" value="0" oninput="calculateExFactory()">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Discount:</label>
+            <div class="input-wrapper">
+                <div class="percentage-symbol">%</div>
+                <input type="number" id="discount1" step="0.1" value="40" oninput="calculateExFactory()">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="result">Original ($):</label>
+            <div class="input-wrapper">
+                <div class="currency-symbol">$</div>
+                <input type="text" id="exFactoryResult1" readonly>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calculator 3 -->
+    <div class="calculator calc3">
+        <h2>Enter Buy and Sell Price <br>For Markup (%)</h2>
+
+        <div class="form-group">
+            <label>Sell Price ($):</label>
+            <div class="input-wrapper">
+                <div class="currency-symbol">$</div>
+                <input type="number" id="sellPrice" step="0.01" value="0" oninput="calculateMargin()">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Buy Price ($):</label>
+            <div class="input-wrapper">
+                <div class="currency-symbol">$</div>
+                <input type="number" id="cost" step="0.01" value="0" oninput="calculateMargin()">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="result">Markup (%):</label>
+            <div class="input-wrapper">
+                <div class="percentage-symbol">%</div>
+                <input type="text" id="marginResult" readonly>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bottom-row">
+    <!-- Calculator 4 -->
+    <div class="calculator calc4">
+        <h2>Enter Standard cost & Discount<br>To calculate Discounted cost</h2>
+
+        <div class="form-group">
+            <label>Standard cost ($):</label>
+            <div class="input-wrapper">
+                <div class="currency-symbol">$</div>
+                <input type="number" id="exFactory2" step="0.01" value="0" oninput="calculateDiscountedCost()">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Discount:</label>
+            <div class="input-wrapper">
+                <div class="percentage-symbol">%</div>
+                <input type="number" id="discount2" step="0.1" value="40" oninput="calculateDiscountedCost()">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="result">Discounted Cost:</label>
+            <div class="input-wrapper">
+                <div class="currency-symbol">$</div>
+                <input type="text" id="discountedCostResult" readonly>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calculator 5 -->
+    <div class="calculator calc5">
+        <h2>Calculate Tax/VAT/GST<br>Enter Cost Ex or Cost Inc</h2>
+
+        <div class="form-group">
+            <label>Cost Ex GST ($):</label>
+            <div class="input-wrapper">
+                <div class="currency-symbol">$</div>
+                <input type="number" id="nett" step="0.01" value="0" oninput="calculateFromNett()">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Cost Inc. GST ($):</label>
+            <div class="input-wrapper">
+                <div class="currency-symbol">$</div>
+                <input type="number" id="costIncl" step="0.01" value="0" oninput="calculateFromCostIncl()">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Tax/VAT/GST Rate:</label>
+            <div class="input-wrapper">
+                <div class="percentage-symbol">%</div>
+                <input type="number" id="gstRate" step="0.1" value="10" oninput="updateCalculations()">
+            </div>
+        </div>
+    </div>
+
+    <!-- Calculator 6 -->
+    <div class="calculator calc6">
+        <h2>Enter Normal Price & Cost<br>To calculate Discount</h2>
+
+        <div class="form-group">
+            <label>Normal Cost ($):</label>
+            <div class="input-wrapper">
+                <div class="currency-symbol">$</div>
+                <input type="number" id="exFactory3" step="0.01" value="0" oninput="calculateDiscount()">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Invoice Cost ($):</label>
+            <div class="input-wrapper">
+                <div class="currency-symbol">$</div>
+                <input type="number" id="invoiceCost2" step="0.01" value="0" oninput="calculateDiscount()">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="result">Discount:</label>
+            <div class="input-wrapper">
+                <div class="percentage-symbol">%</div>
+                <input type="text" id="discountResult" readonly>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// All JS functions as in your original code
+function calculateMarginAndDollarValue() {
+    const sellPrice = parseFloat(document.getElementById('sellPrice6').value);
+    const cost = parseFloat(document.getElementById('cost6').value);
+    if (!isNaN(sellPrice) && !isNaN(cost)) {
+        const marginPercentage = ((sellPrice - cost) / sellPrice) * 100;
+        const marginDollarValue = sellPrice - cost;
+        document.getElementById('marginPercentageResult6').value = marginPercentage.toFixed(2) + '%';
+        document.getElementById('marginDollarResult6').value = '$' + marginDollarValue.toFixed(2);
+    } else {
+        document.getElementById('marginPercentageResult6').value = '';
+        document.getElementById('marginDollarResult6').value = '';
+    }
+}
+
+function calculateExFactory() {
+    const invoiceCost1 = parseFloat(document.getElementById('invoiceCost1').value);
+    const discount1 = parseFloat(document.getElementById('discount1').value);
+    if (!isNaN(invoiceCost1) && !isNaN(discount1)) {
+        document.getElementById('exFactoryResult1').value = '$' + (invoiceCost1 / (1 - discount1/100)).toFixed(2);
+    } else { document.getElementById('exFactoryResult1').value = ''; }
+}
+
+function calculateDiscountedCost() {
+    const exFactory2 = parseFloat(document.getElementById('exFactory2').value);
+    const discount2 = parseFloat(document.getElementById('discount2').value);
+    if (!isNaN(exFactory2) && !isNaN(discount2)) {
+        document.getElementById('discountedCostResult').value = '$' + (exFactory2 * (1 - discount2/100)).toFixed(2);
+    } else { document.getElementById('discountedCostResult').value = ''; }
+}
+
+function calculateDiscount() {
+    const exFactory3 = parseFloat(document.getElementById('exFactory3').value);
+    const invoiceCost2 = parseFloat(document.getElementById('invoiceCost2').value);
+    if (!isNaN(exFactory3) && !isNaN(invoiceCost2)) {
+        document.getElementById('discountResult').value = ((1 - invoiceCost2/exFactory3)*100).toFixed(2) + '%';
+    } else { document.getElementById('discountResult').value = ''; }
+}
+
+function calculateMargin() {
+    const sellPrice = parseFloat(document.getElementById('sellPrice').value);
+    const cost = parseFloat(document.getElementById('cost').value);
+    if (!isNaN(sellPrice) && !isNaN(cost)) {
+        document.getElementById('marginResult').value = ((sellPrice/cost)*100).toFixed(0) + '%';
+    } else { document.getElementById('marginResult').value = ''; }
+}
+
+function calculateFromNett() {
+    const nett = parseFloat(document.getElementById('nett').value);
+    const gstRate = parseFloat(document.getElementById('gstRate').value);
+    if (!isNaN(nett) && !isNaN(gstRate)) {
+        document.getElementById('costIncl').value = (nett * (1 + gstRate/100)).toFixed(2);
+    } else { document.getElementById('costIncl').value = ''; }
+}
+
+function calculateFromCostIncl() {
+    const costIncl = parseFloat(document.getElementById('costIncl').value);
+    const gstRate = parseFloat(document.getElementById('gstRate').value);
+    if (!isNaN(costIncl) && !isNaN(gstRate)) {
+        document.getElementById('nett').value = (costIncl / (1 + gstRate/100)).toFixed(2);
+    } else { document.getElementById('nett').value = ''; }
+}
+
+function updateCalculations() {
+    const nettValue = document.getElementById('nett').value;
+    const costInclValue = document.getElementById('costIncl').value;
+    if (nettValue) {
+        calculateFromNett();
+    } else if (costInclValue) {
+        calculateFromCostIncl();
+    }
+}
+
+// Banner animation
+const bannerText = document.querySelector('.banner-text');
+function startAnimation() {
+    bannerText.style.fontStyle = 'italic';
+    bannerText.style.color = '#d4af37';
+    bannerText.style.transition = 'left 20s linear, font-style 0.2s linear';
+    bannerText.style.left = '50%';
+    bannerText.style.transform = 'translate(-50%, -50%)';
+    setTimeout(() => {
+        bannerText.style.fontStyle = 'normal';
+        bannerText.style.animationPlayState = 'running';
+        setTimeout(() => {
+            bannerText.style.animationPlayState = 'paused';
+            bannerText.style.color = '#d4af37';
+            bannerText.style.fontStyle = 'italic';
+            bannerText.style.left = '-170%';
+            bannerText.style.transform = 'translate(-50%, -50%)';
+            setTimeout(() => {
+                bannerText.style.transition = 'none';
+                bannerText.style.left = '150%';
+                bannerText.style.transform = 'translate(0, -50%)';
+                setTimeout(startAnimation, 200);
+            }, 10000);
+        }, 60000);
+    }, 20000);
+}
+window.onload = startAnimation;
+</script>
+</body>
+</html>

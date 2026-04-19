@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Password Generator</title>
+     <!-- Created by Mark Livera 2026 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Modern accent for range slider */
+        input[type=range]::-webkit-slider-thumb {
+            appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #facc15; /* Yellow-400 */
+            cursor: pointer;
+            border: 2px solid #0f172a;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 min-h-screen flex items-center justify-center p-4 font-sans">
+    <div class="w-full max-w-md bg-slate-800 rounded-3xl p-8 shadow-2xl border border-slate-600">
+        
+        <!-- Header with Yellow/Blue Logo Style -->
+        <div class="flex items-center justify-center gap-2 mb-8">
+            <div class="w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
+            <h1 class="text-xl font-bold tracking-tight text-slate-100">
+                PASS<span class="text-yellow-400">WORD</span> <span class="text-blue-400">GEN</span>
+            </h1>
+        </div>
+
+        <!-- Password Display (Gunmetal Box) -->
+        <div class="bg-slate-950 rounded-2xl p-5 flex items-center justify-between mb-6 border border-slate-600 group transition-all hover:border-blue-500/50">
+            <span id="password-display" class="font-mono text-xl text-blue-400 truncate tracking-wider">P@ssw0rd123!</span>
+            <button onclick="copyToClipboard()" title="Copy to Clipboard" class="text-slate-500 hover:text-yellow-400 transition-colors ml-2">
+                <svg xmlns="http://www.w3.org" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Reference Input -->
+        <div class="mb-8">
+            <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Reference / Site Name</label>
+            <input type="text" id="site-ref" placeholder="e.g. Gmail, Amazon, Work" 
+                class="w-full bg-slate-950 border border-slate-600 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-blue-500/50 transition-all placeholder-slate-400">
+        </div>
+
+        <!-- Settings Section -->
+        <div class="space-y-6">
+            <div class="flex justify-between items-center">
+                <label class="text-sm font-semibold text-slate-400">Length: <span id="length-val" class="text-yellow-400 ml-1">12</span></label>
+                <input type="range" id="length" min="6" max="24" value="12" oninput="updateLength(this.value)" 
+                    class="w-2/3 h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-yellow-400">
+            </div>
+
+            <div class="grid grid-cols-2 gap-x-4 gap-y-3 pt-2">
+                <label class="flex items-center gap-3 text-xs font-bold text-slate-400 uppercase cursor-pointer hover:text-slate-200 transition">
+                    <input type="checkbox" id="upper" checked class="w-4 h-4 rounded border-slate-700 bg-slate-950 text-blue-500 focus:ring-0 accent-blue-500"> Uppercase
+                </label>
+                <label class="flex items-center gap-3 text-xs font-bold text-slate-400 uppercase cursor-pointer hover:text-slate-200 transition">
+                    <input type="checkbox" id="lower" checked class="w-4 h-4 rounded border-slate-700 bg-slate-950 text-blue-500 focus:ring-0 accent-blue-500"> Lowercase
+                </label>
+                <label class="flex items-center gap-3 text-xs font-bold text-slate-400 uppercase cursor-pointer hover:text-slate-200 transition">
+                    <input type="checkbox" id="numbers" checked class="w-4 h-4 rounded border-slate-700 bg-slate-950 text-blue-500 focus:ring-0 accent-blue-500"> Numbers
+                </label>
+                <label class="flex items-center gap-3 text-xs font-bold text-slate-400 uppercase cursor-pointer hover:text-slate-200 transition">
+                    <input type="checkbox" id="symbols" checked class="w-4 h-4 rounded border-slate-700 bg-slate-950 text-blue-500 focus:ring-0 accent-blue-500"> Symbols
+                </label>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="grid grid-cols-1 gap-4 mt-8">
+                <button onclick="generate()" 
+                    class="w-full bg-yellow-400 hover:bg-yellow-300 text-slate-950 py-4 rounded-xl font-black uppercase tracking-wider transition-all transform active:scale-[0.98] shadow-lg shadow-yellow-400/10">
+                    Generate New Key
+                </button>
+                
+                <button onclick="saveToFile()" 
+                    class="w-full bg-blue-900 hover:bg-blue-700 text-slate-300 py-3 rounded-xl font-bold transition-all border border-slate-700 flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Export .txt File
+                </button>
+            </div>
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-slate-800 flex items-center justify-center gap-2">
+            <span class="text-[10px] text-slate-600 font-bold uppercase tracking-[0.2em]">100% Client-Side Encryption</span>
+        </div>
+    </div>
+
+    <script>
+        function updateLength(v) { document.getElementById('length-val').innerText = v; }
+
+        function generate() {
+            const length = document.getElementById('length').value;
+            const charset = {
+                upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                lower: 'abcdefghijklmnopqrstuvwxyz',
+                numbers: '0123456789',
+                symbols: '!@#$%^&*()_+~`|}{[]:;?><,./-='
+            };
+            
+            let characters = "";
+            if(document.getElementById('upper').checked) characters += charset.upper;
+            if(document.getElementById('lower').checked) characters += charset.lower;
+            if(document.getElementById('numbers').checked) characters += charset.numbers;
+            if(document.getElementById('symbols').checked) characters += charset.symbols;
+
+            if(!characters) return alert("Select at least one character type!");
+
+            let password = "";
+            const array = new Uint32Array(length);
+            window.crypto.getRandomValues(array);
+            for (let i = 0; i < length; i++) {
+                password += characters.charAt(array[i] % characters.length);
+            }
+            document.getElementById('password-display').innerText = password;
+        }
+
+        async function copyToClipboard() {
+            const pass = document.getElementById('password-display').innerText;
+            await navigator.clipboard.writeText(pass);
+            const btn = event.currentTarget;
+            btn.classList.add('text-green-400');
+            setTimeout(() => btn.classList.remove('text-green-400'), 1000);
+        }
+
+        function saveToFile() {
+            const site = document.getElementById('site-ref').value.trim() || "Untitled_Site";
+            const pass = document.getElementById('password-display').innerText;
+            const timestamp = new Date().toLocaleString();
+
+            const fileContent = `Reference: ${site}\nPassword: ${pass}\nGenerated: ${timestamp}`;
+            const blob = new Blob([fileContent], { type: "text/plain" });
+            const link = document.createElement("a");
+            
+            link.href = URL.createObjectURL(blob);
+            link.download = `${site.replace(/\s+/g, '_')}_password.txt`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+
+        generate();
+    </script>
+</body>
+</html>

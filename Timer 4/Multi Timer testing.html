@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<!-- Multi Timer - UI Matched Version -->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Multi Timer</title>
+
+<style>
+:root {
+  --bg-color: #2a2a2a;
+  --container-bg: #22328b;
+  --box-bg: rgba(0, 0, 0, 0.486);
+  --header-bg: rgba(0, 0, 0, 0.4);
+  --text-light: rgb(214, 214, 214);
+  --accent-yellow: rgba(236, 224, 53, 0.966);
+}
+
+body {
+  background-color: var(--bg-color);
+  margin: 0;
+  font-family: Arial, sans-serif;
+  overflow: hidden; /* remove page scroll */
+}
+
+.wrapper {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 1vw;
+  padding: 1vw;
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+.timer-container {
+  background-color: var(--container-bg);
+  padding: 1vw 1.2vw;
+  border-radius: 15px;
+  box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.678);
+  color: var(--text-light);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+  justify-content: space-between;
+  overflow: hidden; /* prevent spill */
+}
+
+.header-box {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.8vh 1vw;
+  background: var(--header-bg);
+  border-radius: 20px;
+  margin-bottom: 0.6vh;
+  font-size: clamp(1.4rem, 2vw, 2.2rem);
+}
+
+.header-box input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: greenyellow;
+  font-weight: bolder;
+  font-size: inherit; /* ensure input scales with header */
+}
+
+.header-box input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: greenyellow;
+  font-weight: bold;
+}
+
+.time-box {
+  display: flex;
+  justify-content: space-between;
+  background: var(--box-bg);
+  border-radius: 20px;
+  padding: 0.7vh 1vw;
+  margin-bottom: 0.7vh;
+  font-size: clamp(1rem, 1.3vw, 1.6rem);
+}
+
+/* ✅ FIXED: inputs now sit side-by-side */
+.input-container {
+  display: flex;
+  gap: 1vw;
+  margin-bottom: 0.4vh; /* tighter spacing above buttons */
+}
+
+.input-box {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6vw;
+  background: var(--box-bg);
+  border-radius: 20px;
+  padding: 0.8vh 1vw;
+  font-size: clamp(1.05rem, 1.15vw, 1.4rem); /* slightly larger but controlled */
+  white-space: nowrap; /* prevent wrapping */
+}
+
+.input-box label {
+  flex-shrink: 0;
+}
+
+.input-box input {
+  width: 6ch; /* keeps HH:MM tight */
+  text-align: center;
+  font-family: monospace;
+}
+
+.buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5vw;
+  margin-top: 0.5vh; /* pulls buttons closer */
+}
+
+button {
+  border: none;
+  border-radius: 10px;
+  color: white;
+  padding: 1rem;
+}
+
+.start { background-color: #065e1c; }
+.pause { background-color: #cfaf2e; }
+.stop { background-color: #1E90ff; }
+.reset { background-color: #DC143C; }
+</style>
+</head>
+
+<body>
+<div class="wrapper" id="wrapper"></div>
+
+<script>
+const TIMER_COUNT = 4;
+let timers = {};
+
+function createTimer(id) {
+  timers[id] = {
+    totalTime: 0,
+    runningTime: 0,
+    pausedTime: 0,
+    totalPausedTime: 0,
+    running: false,
+    paused: false,
+    interval: null
+  };
+
+  const el = document.createElement('div');
+  el.className = 'timer-container';
+
+  el.innerHTML = `
+    <div class="header-box">
+      <input placeholder="Click here to enter event name..." />
+    </div>
+
+    <div class="time-box">
+      <span>Total Event Time:</span>
+      <span id="run-${id}">0:00:00</span>
+    </div>
+
+    <div class="time-box">
+      <span>Total Elapsed Time:</span>
+      <span id="tot-${id}">0:00:00</span>
+    </div>
+
+    <div class="time-box">
+      <span>Current Break Time:</span>
+      <span>0:00:00</span>
+    </div>
+
+    <div class="time-box">
+      <span>Total Break Time:</span>
+      <span>0:00:00</span>
+    </div>
+
+    <!-- ✅ FIXED STRUCTURE -->
+    <div class="input-container">
+      <div class="input-box">
+        <label>Event Duration (HH:MM):</label>
+        <input />
+      </div>
+
+      <div class="input-box">
+        <label>Break Allowance (HH:MM):</label>
+        <input />
+      </div>
+    </div>
+
+    <div class="buttons">
+      <button class="start" onclick="startTimer(${id})">Start Timer</button>
+      <button class="pause" onclick="pauseTimer(${id})">Break/Restart</button>
+      <button class="stop" onclick="stopTimer(${id})">Stop</button>
+      <button class="reset" onclick="resetTimer(${id})">Reset All</button>
+    </div>
+  `;
+
+  document.getElementById('wrapper').appendChild(el);
+}
+
+function formatTime(s) {
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+
+function updateDisplay(id) {
+  document.getElementById(`run-${id}`).innerText = formatTime(timers[id].runningTime);
+  document.getElementById(`tot-${id}`).innerText = formatTime(timers[id].totalTime);
+}
+
+function startTimer(id) {
+  const t = timers[id];
+  if (t.interval) return;
+
+  t.running = true;
+
+  t.interval = setInterval(() => {
+    t.totalTime++;
+    if (t.running) t.runningTime++;
+    updateDisplay(id);
+    save();
+  }, 1000);
+}
+
+function pauseTimer(id) {
+  const t = timers[id];
+  t.running = !t.running;
+}
+
+function stopTimer(id) {
+  const t = timers[id];
+  clearInterval(t.interval);
+  t.interval = null;
+  t.running = false;
+}
+
+function resetTimer(id) {
+  timers[id] = {
+    totalTime: 0,
+    runningTime: 0,
+    pausedTime: 0,
+    totalPausedTime: 0,
+    running: false,
+    paused: false,
+    interval: null
+  };
+  updateDisplay(id);
+  save();
+}
+
+function save() {
+  sessionStorage.setItem('multiTimers', JSON.stringify(timers));
+}
+
+function load() {
+  const saved = sessionStorage.getItem('multiTimers');
+  if (saved) {
+    const data = JSON.parse(saved);
+    Object.keys(data).forEach(id => {
+      timers[id] = { ...data[id], interval: null };
+      updateDisplay(id);
+      if (timers[id].running) startTimer(id);
+    });
+  }
+}
+
+for (let i = 1; i <= TIMER_COUNT; i++) createTimer(i);
+load();
+</script>
+</body>
+</html>

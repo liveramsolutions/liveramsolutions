@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Golf Scorer</title>
+
+<!-- Created by Mark L -->
+
+<style>
+:root {
+  --bg-color: #2a2a2a;
+  --container-bg: #22328b;
+  --box-bg: rgba(0, 0, 0, 0.486);
+  --header-bg: #22328b;
+  --text-light: rgb(214, 214, 214);
+  --accent-yellow: rgba(236, 224, 53, 0.966);
+}
+* { box-sizing: border-box; }
+body { margin:0; font-family:Arial; background:var(--bg-color); color:var(--text-light); }
+.container { max-width:600px; margin:auto; padding:5px; }
+h1 { text-align:center; color:var(--accent-yellow); font-size: clamp(1.5rem, 6vw, 2rem); margin:5px 0; }
+.top-box { background:var(--container-bg); border-radius:15px; padding:8px; margin-bottom:4px; display:flex; flex-direction:column; gap:4px; position:relative; }
+.top-box input { width:100%; padding:8px; border:none; border-radius:10px; background:var(--box-bg); color:var(--text-light); font-size:1.2rem; }
+#courseList { position:absolute; background:var(--container-bg); color:var(--text-light); border-radius:8px; padding:4px 0; margin-top:2px; z-index:15; max-height:150px; overflow-y:auto; box-shadow:0 4px 8px rgba(0,0,0,0.3); }
+#courseList div { padding:6px 12px; cursor:pointer; background:var(--container-bg); color:var(--text-light); }
+#courseList div:hover { background:rgba(36,195,201,0.8); }
+.course-suggestions { position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--container-bg); color:var(--text-light); border-radius:8px; display:none; flex-direction:column; max-height:150px; overflow-y:auto; z-index:15; box-shadow:0 4px 8px rgba(0,0,0,0.3); }
+.course-suggestions div { padding:6px 12px; cursor:pointer; background:var(--container-bg); color:var(--text-light); }
+.course-suggestions div:hover { background:rgba(36,195,201,0.8); }
+.row .cell:first-child { color: var(--accent-yellow); font-weight:bold; }
+.round-buttons { display:flex; gap:6px; margin-top:4px; }
+.round-buttons button { flex:1; padding:6px; border:none; border-radius:10px; background:var(--box-bg); color:white; font-weight:bold; font-size:1rem; cursor:pointer; }
+.round-buttons button.active { background: #24c3c9; color:white; transform: scale(1.03); }
+.total-box { background:var(--container-bg); border-radius:15px; padding:8px; margin-top:4px; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+.total-box div { flex:1; }
+.table-container { max-height:50vh; overflow-y:auto; -ms-overflow-style: none; scrollbar-width: none; }
+.table-container::-webkit-scrollbar { display: none; }
+.table { width:100%; }
+.row { display:grid; grid-template-columns:40px 60px 110px 55px 65px 70px; gap:8px; align-items:center; margin-bottom:5px; background:var(--box-bg); padding:6px; border-radius:10px; font-size:1.2rem; }
+.header { background:var(--header-bg); font-weight:bold; position:sticky; top:0; z-index:2; color:var(--text-light); }
+.cell { text-align:center; }
+.output { font-weight:bold; }
+.pos { color:#ff6b6b; }
+.neg { color:#6bff95; }
+.stepper { display:flex; align-items:center; justify-content:center; gap:10px; }
+.stepper span { min-width:28px; text-align:center; font-size:1.3rem; }
+.stepper button { width:40px; height:40px; border:none; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:bold; padding:0; }
+.minus { background:orange; }
+.plus { background:#065e1c; }
+.par-select { background:var(--box-bg); border-radius:8px; padding:8px; text-align:center; font-weight:bold; cursor:pointer; font-size:1.2rem; }
+#parPopup { display: none; position: absolute; top: -9999px; left: -9999px; background: transparent; padding: 6px; z-index: 10; gap: 8px; flex-wrap: nowrap;}
+.golf-ball { width:48px; height:48px; border-radius:50%; background: radial-gradient(circle at 30% 30%, #ffffff 0%, #f0f0f0 60%, #dcdcdc 100%); box-shadow: inset -4px -4px 8px rgba(0,0,0,0.2), inset 2px 2px 5px rgba(255,255,255,0.7), 3px 3px 8px rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:1.2rem; color:black; border:none; cursor:pointer; transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.1s ease; position:relative; }
+.golf-ball::after { content:""; position:absolute; inset:0; border-radius:50%; background-image: radial-gradient(rgba(0,0,0,0.2) 1px, transparent 1px); background-size:6px 6px; pointer-events:none; opacity:0.7; }
+.golf-ball:hover { transform: scale(1.1); filter: brightness(1.1); }
+.golf-ball:active { transform: scale(0.95); box-shadow: inset 3px 3px 6px rgba(0,0,0,0.5); }
+.golf-ball.selected { outline:3px solid var(--accent-yellow); transform: scale(1.15); }
+button.main { width:100%; padding:10px; margin-top:8px; border:none; border-radius:10px; font-weight:bold; color:white; font-size:1.1rem; cursor:pointer; }
+.save { background:#065e1c; }
+.email { background:#24c3c9; }
+.reset { background:orange; }
+button, .golf-ball { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+button:hover:not(:disabled), .golf-ball:hover { transform: translateY(-3px) scale(1.03); box-shadow:3px 6px 12px rgba(0,0,0,0.4); }
+button:active:not(:disabled), .golf-ball:active { transform: translateY(1px) scale(0.97); box-shadow: inset 2px 2px 6px rgba(0,0,0,0.4); }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Golf Scorer</h1>
+<div class="top-box">
+<input id="courseName" placeholder="Course Name" oninput="showCourseSuggestions()" autocomplete="off">
+<div class="course-suggestions" id="courseSuggestions"></div>
+<div style="font-weight:bold;">Round</div>
+<div class="round-buttons">
+  <button onclick="setMode('18')" id="btn18" class="active">18</button>
+  <button onclick="setMode('front9')" id="btnFront">Front 9</button>
+  <button onclick="setMode('back9')" id="btnBack">Back 9</button>
+  <button onclick="showPreviousRounds()" id="btnPrev">Previous</button>
+</div>
+</div>
+<div class="table-container"><div id="table" class="table"></div></div>
+<div class="total-box">
+  <div style="text-align:left;">Out: <span id="outStrokes">0</span> (<span id="outPar">0</span>)</div>
+  <div style="text-align:center;">In: <span id="inStrokes">0</span> (<span id="inPar">0</span>)</div>
+  <div style="text-align:right;">Total: <span id="totalStrokes">0</span> (<span id="totalPar">0</span>)</div>
+</div>
+<div style="display:flex; gap:8px; margin-top:8px;">
+  <button class="main save" onclick="saveRound()" style="flex:1;">Save Round</button>
+  <button class="main email" onclick="emailRoundAndSave()" style="flex:1;">Email Round</button>
+</div>
+<button class="main reset" onclick="resetRound()">Reset Round</button>
+</div>
+
+<div id="parPopup">
+  <button class="golf-ball" onclick="setPar(3,this)">3</button>
+  <button class="golf-ball" onclick="setPar(4,this)">4</button>
+  <button class="golf-ball" onclick="setPar(5,this)">5</button>
+</div>
+
+<script>
+let currentMode='18';
+let activeParCell=null;
+let courseNameInput=document.getElementById('courseName');
+
+function setMode(mode){
+ currentMode=mode;
+ document.querySelectorAll('.round-buttons button').forEach(b=>b.classList.remove('active'));
+ document.getElementById(mode==='18'?'btn18':mode==='front9'?'btnFront':'btnBack').classList.add('active');
+ generateTable();
+}
+
+function generateTable(){
+ const table=document.getElementById('table');
+ table.innerHTML='';
+ let start=1,count=18;
+ if(currentMode==='front9'){count=9;start=1}
+ if(currentMode==='back9'){count=9;start=10}
+ const header=document.createElement('div');
+ header.className='row header';
+ header.innerHTML='<div>Hole</div><div>Par</div><div>Shots</div><div>+/-</div><div>Run</div><div>Run +/-</div>';
+ table.appendChild(header);
+ for(let i=0;i<count;i++){
+  const hole=start+i;
+  const row=document.createElement('div');
+  row.className='row';
+  row.innerHTML=`<div class="cell">${hole}</div>
+  <div class="par-select" data-value="0" onclick="showParPopup(this)">-</div>
+  <div class="stepper">
+    <button class="minus" onclick="step(this,-1)">-</button>
+    <span data-type="shots">0</span>
+    <button class="plus" onclick="step(this,1)">+</button>
+  </div>
+  <div class="cell output" data-type="diff"></div>
+  <div class="cell output" data-type="run"></div>
+  <div class="cell output" data-type="runpar"></div>`;
+  table.appendChild(row);
+ }
+}
+
+function showParPopup(cell){
+ activeParCell=cell;
+ const popup=document.getElementById('parPopup');
+ const rect=cell.getBoundingClientRect();
+ popup.style.top=(rect.bottom + window.scrollY)+'px';
+ popup.style.left=(rect.left + window.scrollX)+'px';
+ popup.style.display='flex';
+}
+
+function setPar(value, btn){
+ if(activeParCell){
+  activeParCell.dataset.value=value;
+  activeParCell.textContent=value;
+  document.querySelectorAll('.golf-ball').forEach(b=>b.classList.remove('selected'));
+  if(btn) btn.classList.add('selected');
+  setTimeout(()=>{ document.getElementById('parPopup').style.display='none'; activeParCell=null; },150);
+  lockRoundButtons();
+  update();
+}
+
+}
+
+function lockRoundButtons(){
+ document.querySelectorAll('.round-buttons button').forEach(b=>{ b.disabled=true; b.style.cursor='not-allowed'; });
+}
+function unlockRoundButtons(){
+ document.querySelectorAll('.round-buttons button').forEach(b=>{ b.disabled=false; b.style.cursor='pointer'; });
+}
+
+function step(btn,change){
+ const span=btn.parentElement.querySelector('[data-type="shots"]');
+ let val=parseInt(span.textContent)||0;
+ val=Math.max(0,val+change);
+ span.textContent=val;
+ lockRoundButtons();
+ update();
+}
+
+function update(){
+ const rows=document.querySelectorAll('.row:not(.header)');
+ let totalShots=0,totalPar=0,runShots=0,runPar=0,outShots=0,outPar=0,inShots=0,inPar=0;
+ let last=-1;
+ rows.forEach((r,i)=>{ const s=parseInt(r.querySelector('[data-type="shots"]').textContent); if(s>0) last=i; });
+ rows.forEach((r,i)=>{
+  const par=parseInt(r.querySelector('.par-select').dataset.value)||0;
+  const shots=parseInt(r.querySelector('[data-type="shots"]').textContent)||0;
+  const diff=shots-par;
+  if(i<=last && shots>0){
+   runShots+=shots; runPar+=diff; totalShots+=shots; totalPar+=diff;
+   if(i<9){ outShots+=shots; outPar+=diff; } else { inShots+=shots; inPar+=diff; }
+   r.querySelector('[data-type="diff"]').textContent=diff>0?`+${diff}`:diff;
+   r.querySelector('[data-type="diff"]').className='cell output '+(diff>0?'pos':diff<0?'neg':'');
+   r.querySelector('[data-type="run"]').textContent=runShots;
+   const rp=r.querySelector('[data-type="runpar"]');
+   rp.textContent=runPar>0?`+${runPar}`:runPar;
+   rp.className='cell output '+(runPar>0?'pos':runPar<0?'neg':'');
+  } else { r.querySelectorAll('[data-type="diff"],[data-type="run"],[data-type="runpar"]').forEach(el=>el.textContent=''); }
+ });
+ document.getElementById('outStrokes').textContent=outShots;
+ document.getElementById('outPar').textContent=outPar>0?`+${outPar}`:outPar;
+ document.getElementById('inStrokes').textContent=inShots;
+ document.getElementById('inPar').textContent=inPar>0?`+${inPar}`:inPar;
+ document.getElementById('totalStrokes').textContent=totalShots;
+ document.getElementById('totalPar').textContent=totalPar>0?`+${totalPar}`:totalPar;
+}
+
+function resetRound(){
+ if(!confirm("Are you sure you want to reset this round?")) return;
+ document.querySelectorAll('[data-type="shots"]').forEach(s=>s.textContent='0');
+ document.querySelectorAll('.par-select').forEach(p=>{p.dataset.value='0';p.textContent='-';});
+ document.querySelectorAll('[data-type="diff"],[data-type="run"],[data-type="runpar"]').forEach(o=>o.textContent='');
+ document.getElementById('totalStrokes').textContent='0';
+ document.getElementById('totalPar').textContent='0';
+ document.getElementById('outStrokes').textContent='0';
+ document.getElementById('outPar').textContent='0';
+ document.getElementById('inStrokes').textContent='0';
+ document.getElementById('inPar').textContent='0';
+ unlockRoundButtons();
+}
+
+function saveRound(){
+ const course=courseNameInput.value.trim(); if(!course) { alert("Enter course name"); return; }
+ const data={ date:new Date().toLocaleString(), holes:[], totalStrokes:document.getElementById('totalStrokes').textContent, totalPar:document.getElementById('totalPar').textContent };
+ document.querySelectorAll('.row:not(.header)').forEach((r,i)=>{ data.holes.push({hole:i+1, par:r.querySelector('.par-select').dataset.value, shots:r.querySelector('[data-type="shots"]').textContent}); });
+ let allCourses=JSON.parse(localStorage.getItem('golfCourses')||'{}');
+ if(!allCourses[course]) allCourses[course]=[];
+ allCourses[course].push(data);
+ if(allCourses[course].length>3) allCourses[course]=allCourses[course].slice(-3);
+ localStorage.setItem('golfCourses',JSON.stringify(allCourses));
+ alert("Saved");
+}
+
+function emailRound(){
+  saveRound();
+  const course = courseNameInput.value.trim();
+  if(!course) return;
+  const allCourses = JSON.parse(localStorage.getItem('golfCourses') || '{}');
+  const lastRound = allCourses[course]?.slice(-1)[0];
+  if(!lastRound) return;
+  const rows = document.querySelectorAll('.row:not(.header)');
+  
+  let body = `Course: ${course}\nDate: ${lastRound.date}\n\n`;
+  body += 'Hole | Par | Shots | +/- | Run | Run +/-\n';
+  body += '----------------------------------------\n';
+  
+  let runShots = 0, runPar = 0, outShots = 0, outPar = 0, inShots = 0, inPar = 0;
+  
+  rows.forEach((r, i)=>{
+    const par = parseInt(r.querySelector('.par-select').dataset.value) || 0;
+    const shots = parseInt(r.querySelector('[data-type="shots"]').textContent) || 0;
+    const diff = shots - par;
+    if(shots > 0){
+      runShots += shots;
+      runPar += diff;
+      if(i < 9){ outShots += shots; outPar += diff; } else { inShots += shots; inPar += diff; }
+      const runStr = runShots.toString().padStart(3,' ');
+      const runParStr = (runPar>0?`+${runPar}`:runPar).toString().padStart(4,' ');
+      const diffStr = (diff>0?`+${diff}`:diff).toString().padStart(3,' ');
+      body += `${(i+1).toString().padStart(2,' ')}   | ${par.toString().padStart(2,' ')}  | ${shots.toString().padStart(3,' ')}  | ${diffStr} | ${runStr} | ${runParStr}\n`;
+    }
+  });
+  
+  body += '\n';
+  body += `Out:   ${outShots.toString().padStart(2,' ')} (${(outPar>0?`+${outPar}`:outPar).toString().padStart(3,' ')})\n`;
+  body += `In:    ${inShots.toString().padStart(2,' ')} (${(inPar>0?`+${inPar}`:inPar).toString().padStart(3,' ')})\n`;
+  body += `Total: ${runShots.toString().padStart(2,' ')} (${(runPar>0?`+${runPar}`:runPar).toString().padStart(3,' ')})\n`;
+  
+  location.href = `mailto:?subject=Golf Round&body=${encodeURIComponent(body)}`;
+}
+function emailRoundAndSave(){
+  saveRound();
+  emailRound();
+}
+function showCourseSuggestions(){
+    const val = courseNameInput.value.trim().toLowerCase();
+    const container = document.getElementById('courseSuggestions');
+    container.innerHTML = '';
+    if(!val){ container.style.display='none'; return; }
+
+    const allCourses = JSON.parse(localStorage.getItem('golfCourses') || '{}');
+    Object.keys(allCourses)
+        .filter(c => c.toLowerCase().includes(val))
+        .forEach(c => {
+            const div = document.createElement('div');
+            div.textContent = c;
+            div.onclick = () => {
+                courseNameInput.value = c;
+                container.style.display = 'none';
+                loadParForCourse(c);
+            };
+            container.appendChild(div);
+        });
+
+    if(container.children.length){
+        // Position relative to .top-box
+        const inputRect = courseNameInput.getBoundingClientRect();
+        const topBoxRect = courseNameInput.parentElement.getBoundingClientRect();
+
+        const offsetTop = inputRect.bottom - topBoxRect.top; // distance inside top-box
+        const offsetLeft = inputRect.left - topBoxRect.left;
+
+        container.style.position = 'absolute';
+        container.style.top = offsetTop + 'px';
+        container.style.left = offsetLeft + 'px';
+        container.style.width = inputRect.width + 'px';
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        container.style.background = 'var(--container-bg)';
+        container.style.color = 'var(--text-light)';
+        container.style.borderRadius = '8px';
+        container.style.maxHeight = '150px';
+        container.style.overflowY = 'auto';
+        container.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+        container.style.zIndex = '100';
+    } else {
+        container.style.display = 'none';
+    }
+}
+
+function loadParForCourse(course){
+ const allCourses=JSON.parse(localStorage.getItem('golfCourses')||'{}');
+ const lastRound=allCourses[course]?.slice(-1)[0];
+ if(!lastRound) return;
+ document.querySelectorAll('.row:not(.header)').forEach((r,i)=>{
+  const h=lastRound.holes[i];
+  if(h){ r.querySelector('.par-select').dataset.value=h.par; r.querySelector('.par-select').textContent=h.par; r.querySelector('[data-type="shots"]').textContent='0'; }
+ });
+ update();
+}
+
+function showPreviousRounds(){
+ const course=courseNameInput.value.trim(); if(!course) return;
+ const allCourses=JSON.parse(localStorage.getItem('golfCourses')||'{}');
+ const rounds=allCourses[course]||[]; if(!rounds.length) { alert("No previous rounds"); return; }
+ let sel=prompt("Select round:\n"+rounds.map((r,i)=>`${i+1}: ${r.date}`).join('\n'));
+ sel=parseInt(sel)-1; if(rounds[sel]){ loadRoundData(rounds[sel]); }
+}
+
+function loadRoundData(round){
+  document.querySelectorAll('.row:not(.header)').forEach((r,i)=>{
+    const h = round.holes[i];
+    if(h){
+      r.querySelector('.par-select').dataset.value = h.par;
+      r.querySelector('.par-select').textContent = h.par;
+      r.querySelector('[data-type="shots"]').textContent = h.shots;
+    }
+  });
+  update();
+  lockRoundButtons();
+}
+
+generateTable();
+</script>
+</body>
+</html>

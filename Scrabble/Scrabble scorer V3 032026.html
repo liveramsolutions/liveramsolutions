@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scrabble Scorer</title>
+<!-- Created by Mark Livera 2025 -->
+<style>
+body {
+  margin: 0;
+  background-color: #363838;
+  font-family: Arial, sans-serif;
+  color: #f5e5c7;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;      
+  overflow: hidden;   
+}
+
+header {
+  position: sticky;
+  top: 0;
+  background: #363838;
+  width: 100%;
+  display: flex;
+  justify-content: center;     
+  align-items: center;
+  gap: 1rem;
+  padding: 0.2rem 0.5rem;       
+  z-index: 1000;
+}
+
+.title-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.scrabble-title {
+  display: flex;
+  justify-content: center;
+  gap: 0.05em;
+  flex-wrap: nowrap;
+}
+
+header .controls {
+  display: flex;
+  gap: 0.75rem;                  
+}
+
+.container {
+  display: grid;
+  gap: 0.5rem;
+  width: 100%;
+  flex: 1;
+  justify-content: center;      
+  padding: 0.2rem 0.5rem 0.5rem 0.5rem;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1200px) {
+  .container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  body {
+    overflow: auto;   
+  }
+  .container {
+    grid-template-columns: 1fr;
+  }
+}
+
+.player {
+  background-color: #003366;
+  border-radius: 15px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.name-input {
+  margin-bottom: 0.5rem;
+  padding: 0.3rem;
+  border-radius: 5px;
+  border: none;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.player-name {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+  max-width: 100%;
+}
+
+.scrabble-name {
+  display: flex;
+  justify-content: center;
+  gap: 0.05em;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.tile {
+  background: #f5e5c7;
+  border: 0.15em solid #bea779;
+  border-radius: 0.25em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  color: #000;
+  box-shadow: 0.3em 0.3em 0.6em rgba(0,0,0,0.5);
+  position: relative;
+  width: 36px;
+  height: 36px;
+  font-size: 1.2rem;
+}
+
+.tile-value {
+  position: absolute;
+  bottom: 0.2em;
+  right: 0.3em;
+  font-size: 0.5rem;
+  font-weight: bold;
+}
+
+.score-row, .score-input {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.score {
+  font-size: clamp(1rem, 1.5vw, 1.5rem);
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3em;
+}
+
+.score-input input {
+  width: 60px;
+  padding: 0.3rem;
+  border-radius: 5px;
+  border: none;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.score-input button {
+  padding: 0.3rem 0.6rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.add-btn { background: #4CAF50; color: white; }
+.remove-btn { background: #f44336; color: white; }
+.edit-name-btn { background: #ffa500; color: white; }
+
+.turns {
+  margin-top: 1rem;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.turns th, .turns td {
+  border-bottom: 1px solid #666;
+  padding: 0.2rem;
+  text-align: center;
+}
+
+.rank {
+  font-size: clamp(0.9rem, 1.2vw, 1.2rem);
+  font-weight: bold;
+  color: gold;
+  margin-right: 0.5em;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-container">
+    <div class="scrabble-title"></div>
+  </div>
+  <div class="controls">
+    <label for="numPlayersSelect" style="color:white;">Players:</label>
+    <select id="numPlayersSelect">
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4" selected>4</option>
+    </select>
+    <button id="resetAll">Reset All</button>
+    <button id="exportCSV">Export CSV</button>
+  </div>
+</header>
+
+<div class="container" id="playerContainer"></div>
+
+<script>
+const STORAGE_KEY = "scrabbleScoreboardData";
+const EXPIRY_HOURS = 24;
+
+const playerContainer = document.getElementById("playerContainer");
+const numPlayersSelect = document.getElementById("numPlayersSelect");
+let players = [];
+
+/* ==== Render header title as Scrabble tiles ==== */
+function renderScrabbleTitle() {
+  const scrabbleTitle = document.querySelector(".scrabble-title");
+  if (!scrabbleTitle) return;
+  scrabbleTitle.innerHTML = "";
+
+  const titleText = "SCRABBLE SCORER"; 
+  const values = {A:1,B:3,C:3,D:2,E:1,F:4,G:2,H:4,I:1,J:8,K:5,L:1,M:3,N:1,O:1,P:3,Q:10,R:1,S:1,T:1,U:1,V:4,W:4,X:8,Y:4,Z:4};
+
+  const tileSize = 54; // 1.5x larger than normal player tiles
+
+  [...titleText].forEach(letter => {
+    const tile = document.createElement("div");
+    tile.className = "tile";
+    tile.style.width = tile.style.height = tileSize + "px";
+    tile.style.fontSize = (tileSize * 0.5) + "px"; 
+    tile.style.background = "#f5e5c7"; 
+    tile.style.border = "0.15em solid #bea779"; 
+
+    if (letter === " ") {
+      // Blank tile for space
+      tile.textContent = "";
+    } else {
+      tile.textContent = letter;
+      if (values[letter] !== undefined) {
+        const val = document.createElement("span");
+        val.className = "tile-value";
+        val.textContent = values[letter];
+        val.style.fontSize = (tileSize * 0.25) + "px"; 
+        tile.appendChild(val);
+      }
+    }
+
+    scrabbleTitle.appendChild(tile);
+  });
+}
+
+/* ==== SAVE / LOAD SYSTEM ==== */
+function saveGame() {
+  const data = {
+    timestamp: Date.now(),
+    numPlayers: parseInt(numPlayersSelect.value),
+    players: []
+  };
+  document.querySelectorAll(".player").forEach(player=>{
+    const name = player.querySelector(".name-input").value;
+    const turns = [];
+    player.querySelectorAll(".turns tbody tr").forEach(row=>{
+      turns.push(parseInt(row.children[1].textContent));
+    });
+    data.players.push({name, turns});
+  });
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function loadGame() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if(!saved) return false;
+  const data = JSON.parse(saved);
+  const hoursPassed = (Date.now() - data.timestamp)/(1000*60*60);
+  if(hoursPassed > EXPIRY_HOURS){
+    localStorage.removeItem(STORAGE_KEY);
+    return false;
+  }
+
+  numPlayersSelect.value = data.numPlayers;
+  renderPlayers(data.numPlayers);
+
+  setTimeout(()=>{
+    document.querySelectorAll(".player").forEach((player,i)=>{
+      const savedPlayer = data.players[i];
+      if(!savedPlayer) return;
+      const nameInput = player.querySelector(".name-input");
+      const scoreInput = player.querySelector(".add-score");
+      const addBtn = player.querySelector(".add-btn");
+      nameInput.value = savedPlayer.name;
+      nameInput.dispatchEvent(new KeyboardEvent("keydown",{key:"Enter"}));
+      savedPlayer.turns.forEach(score=>{
+        scoreInput.value = score;
+        addBtn.click();
+      });
+    });
+  },50);
+  return true;
+}
+
+/* ==== PLAYER CREATION ==== */
+function createPlayer(index){
+  const player = document.createElement("div");
+  player.className="player";
+  player.innerHTML=`
+    <input type="text" class="name-input" placeholder="Enter name">
+    <div class="player-name"><div class="scrabble-name"></div></div>
+    <div class="score-row"><div class="rank"></div><div class="score">Score: 0</div></div>
+    <div class="score-input">
+      <input type="number" class="add-score" placeholder="Score">
+      <button class="add-btn">Add</button>
+      <button class="remove-btn">Undo</button>
+      <button class="edit-name-btn">Edit Name</button>
+    </div>
+    <table class="turns">
+      <thead><tr><th>Turn</th><th>Points</th><th>Total</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  `;
+
+  const nameInput = player.querySelector(".name-input");
+  const scrabbleName = player.querySelector(".scrabble-name");
+  const rankDisplay = player.querySelector(".rank");
+  const scoreDisplay = player.querySelector(".score");
+  const scoreInput = player.querySelector(".add-score");
+  const addButton = player.querySelector(".add-btn");
+  const removeButton = player.querySelector(".remove-btn");
+  const editNameBtn = player.querySelector(".edit-name-btn");
+  const turnsBody = player.querySelector(".turns tbody");
+
+  let totalScore=0, turn=0, turns=[];
+
+  players.push({index,get score(){return totalScore;}, rankDisplay});
+
+  function renderName(){
+    scrabbleName.innerHTML="";
+    const values={A:1,B:3,C:3,D:2,E:1,F:4,G:2,H:4,I:1,J:8,K:5,L:1,M:3,N:1,O:1,P:3,Q:10,R:1,S:1,T:1,U:1,V:4,W:4,X:8,Y:4,Z:10};
+    const letters=[...nameInput.value.toUpperCase()];
+    letters.forEach(letter=>{
+      const tile=document.createElement("div");
+      tile.className="tile";
+      tile.style.width=tile.style.height="36px";
+      tile.style.fontSize="1.2rem";
+      tile.textContent=letter;
+      if(values[letter]!==undefined){
+        const val=document.createElement("span");
+        val.className="tile-value";
+        val.textContent=values[letter];
+        val.style.fontSize="0.5rem";
+        tile.appendChild(val);
+      }
+      scrabbleName.appendChild(tile);
+    });
+    nameInput.style.display="none";
+    saveGame();
+  }
+
+  function updateRanks(){
+    const sorted=[...players].sort((a,b)=>b.score-a.score);
+    let currentRank=1;
+    for(let i=0;i<sorted.length;i++){
+      if(i>0 && sorted[i].score<sorted[i-1].score) currentRank=i+1;
+      sorted[i].rankDisplay.textContent=sorted[i].score>0?`#${currentRank}`:"";
+      sorted[i].rankDisplay.style.color=["gold","silver","#cd7f32"][currentRank-1] || "white";
+    }
+  }
+
+  function addScore(){
+    const val=parseInt(scoreInput.value);
+    if(!isNaN(val) && val>=0){
+      turn++; totalScore+=val; turns.push(val);
+      scoreDisplay.textContent="Score: "+totalScore;
+      const row=document.createElement("tr");
+      row.innerHTML=`<td>${turn}</td><td>${val}</td><td>${totalScore}</td>`;
+      turnsBody.appendChild(row);
+      scoreInput.value="";
+      updateRanks();
+      saveGame();
+    }
+  }
+
+  function removeScore(){
+    if(turns.length>0){
+      const last=turns.pop(); totalScore-=last; turn--;
+      scoreDisplay.textContent="Score: "+totalScore;
+      turnsBody.removeChild(turnsBody.lastChild);
+      updateRanks();
+      saveGame();
+    }
+  }
+
+  editNameBtn.addEventListener("click", ()=>{
+    nameInput.style.display="block";
+    scrabbleName.innerHTML="";
+    nameInput.focus();
+  });
+  nameInput.addEventListener("keydown", e=>{if(e.key==="Enter"&&nameInput.value.trim()!=="") renderName();});
+  scoreInput.addEventListener("keydown", e=>{if(e.key==="Enter") addScore();});
+  addButton.addEventListener("click", addScore);
+  removeButton.addEventListener("click", removeScore);
+
+  return player;
+}
+
+/* ==== RENDER PLAYERS ==== */
+function renderPlayers(num){
+  playerContainer.innerHTML=""; players=[];
+  playerContainer.style.gridTemplateColumns=`repeat(${num}, 1fr)`;
+  for(let i=0;i<num;i++) playerContainer.appendChild(createPlayer(i));
+  saveGame();
+}
+
+/* ==== INITIAL LOAD ==== */
+renderScrabbleTitle();
+if(!loadGame()) renderPlayers(parseInt(numPlayersSelect.value));
+numPlayersSelect.addEventListener("change", ()=>renderPlayers(parseInt(numPlayersSelect.value)));
+
+/* ==== RESET ==== */
+document.getElementById("resetAll").addEventListener("click", ()=>{
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+});
+
+/* ==== EXPORT CSV ==== */
+document.getElementById("exportCSV").addEventListener("click", ()=>{
+  let csv="Player,Turn,Points,Total\n";
+  document.querySelectorAll(".player").forEach((player,i)=>{
+    const name=player.querySelector(".scrabble-name").textContent||`Player ${i+1}`;
+    player.querySelectorAll(".turns tbody tr").forEach(r=>{
+      csv+=`${name},${r.children[0].textContent},${r.children[1].textContent},${r.children[2].textContent}\n`;
+    });
+  });
+  const blob=new Blob([csv],{type:"text/csv"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="scores.csv";
+  a.click();
+});
+</script>
+
+</body>
+</html>

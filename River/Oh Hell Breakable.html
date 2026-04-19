@@ -1,0 +1,297 @@
+<!-- Created by Mark L 2026 -->
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oh Hell! Up and Down the river we go!</title>
+    <style>
+        :root { 
+            --card-width: 48px; 
+            --card-height: 72px; 
+            --primary-gold: #ffd700; 
+            --primary-silver: #c0c0c0; 
+            --primary-bronze: #cd7f32; 
+            --dark-green: #0d3b11; 
+        }
+        
+        body { font-family: 'Segoe UI', sans-serif; background: #1b5e20; color: white; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        /* Sticky Top Section */
+        .sticky-top { 
+            position: sticky; top: 0; background: #1b5e20; z-index: 100; 
+            padding: 5px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            display: flex; flex-direction: column; align-items: center; 
+        }
+        
+        h1 { margin: 0 0 5px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); font-size: 1.8rem; text-align: center; }
+        
+        .setup-container { background: var(--dark-green); padding: 8px 25px; border: 3px solid var(--primary-gold); border-radius: 12px; margin-bottom: 5px; display: inline-block; }
+        .setup-controls { display: flex; gap: 20px; align-items: flex-end; justify-content: center; flex-wrap: wrap; }
+        .control-group { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+        .setup-label { font-weight: bold; color: var(--primary-gold); text-transform: uppercase; font-size: 0.75rem; }
+        
+        input#playerCount { font-size: 1.2rem; padding: 2px; width: 50px; border: 2px solid var(--primary-gold); border-radius: 6px; text-align: center; font-weight: 900; }
+        select#roundOrder { font-size: 1rem; padding: 4px; border-radius: 6px; cursor: pointer; height: 35px; }
+
+        .btn { padding: 0 12px; height: 35px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; font-size: 0.85rem; border-bottom: 3px solid rgba(0,0,0,0.2); }
+        .btn-new { background: #2196F3; }
+        .btn-reset { background: #f44336; }
+        .btn-rules { background: #607d8b; }
+        .btn:active { transform: translateY(2px); border-bottom: none; }
+
+        /* Table & Scroll Logic */
+        .scroll-area { flex: 1; overflow-y: auto; padding: 0 20px 10px 20px; }
+        table { width: 100%; border-collapse: collapse; background: #fafafa; color: #333; margin: 0 auto; }
+        
+        thead th { position: sticky; top: -1px; background: #e0e0e0; z-index: 90; border-bottom: 2px solid #ccc; padding: 4px 8px !important; }
+        th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
+        
+        .score-input { width: 70px; padding: 6px; text-align: center; border: 1px solid #ccc; border-radius: 4px; font-size: 1.1rem; font-weight: bold; margin: 2px 0; }
+        
+        /* Header Layout: Score, Gap, Rank, Trophy */
+        .score-info-line { display: flex; align-items: center; justify-content: center; margin-top: 2px; font-weight: 900; color: #1b5e20; }
+        .total-display { font-size: 1.3rem; }
+        .score-gap { width: 12px; }
+        .rank-tag { font-size: 0.75rem; color: #555; text-transform: uppercase; margin-right: 4px; }
+        .trophy { font-size: 1.1rem; visibility: hidden; width: 22px; text-align: center; }
+
+        .name-input { width: 100px; padding: 4px; font-weight: bold; border: 1px solid #ccc; background: white; text-align: center; font-size: 1rem; color: #333; border-radius: 4px; }
+        
+        .card { 
+            width: var(--card-width); height: var(--card-height); 
+            background: #fff; border-radius: 6px; cursor: pointer; 
+            display: inline-flex; align-items: center; justify-content: center; 
+            font-size: 2.1rem; border: 2px solid #000; color: #000; margin: 0 auto; 
+        }
+        .card.back { 
+            background: #c62828; 
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(255,255,255,0.1) 6px, rgba(255,255,255,0.1) 12px); 
+        }
+        
+        .total-tricks-col { background: #eee; font-weight: bold; width: 50px; font-size: 1.6rem !important; }
+        .hand-size-cell { font-weight: bold; font-size: 1.6rem; }
+        
+        /* Popups */
+        .suit-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border: 5px solid #333; z-index: 1100; border-radius: 15px; }
+        .suit-option { font-size: 5rem; padding: 10px; cursor: pointer; display: inline-block; font-weight: bold; }
+        .red { color: #d32f2f; } .black { color: #000; }
+    </style>
+</head>
+<body>
+
+<div class="sticky-top">
+    <h1>Oh Hell! Up and Down the river we go!</h1>
+    <div class="setup-container">
+        <div class="setup-controls">
+            <div class="control-group">
+                <span class="setup-label">Players</span>
+                <input type="number" id="playerCount" value="4" min="3" max="10">
+            </div>
+            <div class="control-group">
+                <span class="setup-label">Order</span>
+                <select id="roundOrder">
+                    <option value="desc">High → Low</option>
+                    <option value="asc">Low → High</option>
+                </select>
+            </div>
+            <button class="btn btn-new" onclick="confirmNewGame()">START</button>
+            <button class="btn btn-reset" onclick="clearData()">RESET</button>
+            <button class="btn btn-rules" onclick="toggleRules()">RULES</button>
+        </div>
+    </div>
+</div>
+
+<div class="scroll-area">
+    <table id="scoreTable">
+        <thead id="tableHead"></thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+</div>
+
+<div id="suitPopup" class="suit-popup">
+    <span class="suit-option black" onclick="selectSuit('♠')">♠</span>
+    <span class="suit-option red" onclick="selectSuit('♥')">♥</span>
+    <span class="suit-option red" onclick="selectSuit('♦')">♦</span>
+    <span class="suit-option black" onclick="selectSuit('♣')">♣</span>
+    <span class="suit-option black" onclick="selectSuit('NT')">NT</span>
+</div>
+
+<script>
+    let currentSuitTarget = null;
+
+    window.onload = () => {
+        const saved = localStorage.getItem('ohHellGame');
+        if (saved) render(JSON.parse(saved));
+        else initGame();
+    };
+
+    function confirmNewGame() {
+        if (confirm("Start new game? Existing data will be lost.")) initGame();
+    }
+
+    function clearData() {
+        if (confirm("Reset everything?")) { localStorage.clear(); location.reload(); }
+    }
+
+    function toggleRules() {
+        alert("Oh Hell! Quick Rules:\n1. Hit your bid exactly: 10pts bonus + 1 per trick.\n2. Miss your bid: 0 bonus pts.\n3. The Hook: Dealer (last to bid) cannot make a bid that would cause the total round tricks to equal the hand size.");
+    }
+
+    function initGame() {
+        const count = parseInt(document.getElementById('playerCount').value);
+        const order = document.getElementById('roundOrder').value;
+        const maxHands = Math.min(10, Math.floor(52 / count));
+        let handSeq = [];
+        if (order === 'desc') {
+            for (let i = maxHands; i >= 1; i--) handSeq.push(i);
+            for (let i = 2; i <= maxHands; i++) handSeq.push(i);
+        } else {
+            for (let i = 1; i <= maxHands; i++) handSeq.push(i);
+            for (let i = maxHands - 1; i >= 1; i--) handSeq.push(i);
+        }
+        const state = {
+            count,
+            names: Array.from({length: count}, () => ""),
+            rounds: handSeq.map(h => ({
+                handSize: h, trump: '',
+                data: Array.from({length: count}, () => ({ bid: '', won: '' }))
+            }))
+        };
+        localStorage.setItem('ohHellGame', JSON.stringify(state));
+        render(state);
+    }
+
+    function render(state) {
+        let headHtml = `<tr><th>Cards</th><th>Trump</th>`;
+        state.names.forEach((name, i) => {
+            headHtml += `<th id="header-${i}">
+                <input type="text" class="name-input" placeholder="Player ${i+1}" value="${name}" oninput="updateName(${i}, this.value)">
+                <div class="score-info-line">
+                    <span id="total-${i}" class="total-display">0</span>
+                    <div class="score-gap"></div>
+                    <span id="rank-${i}" class="rank-tag">-</span>
+                    <span id="trophy-${i}" class="trophy"></span>
+                </div>
+            </th>`;
+        });
+        headHtml += `<th class="total-tricks-col" style="font-size:0.6rem !important">Total<br>Tricks</th></tr>`;
+        document.getElementById('tableHead').innerHTML = headHtml;
+
+        let bodyHtml = "";
+        state.rounds.forEach((round, rIdx) => {
+            let rowBidSum = 0;
+            let rowHtml = `<tr><td class="hand-size-cell">${round.handSize}</td><td><div class="card ${round.trump ? '' : 'back'}" onclick="openSuitPicker(this, ${rIdx})">${round.trump}</div></td>`;
+            state.names.forEach((_, pIdx) => {
+                const d = round.data[pIdx]; rowBidSum += (parseInt(d.bid) || 0);
+                rowHtml += `<td>
+                    <input type="number" class="score-input" placeholder="Tricks" value="${d.bid}" onfocus="this.select()" onkeydown="checkKey(event)" onchange="handleBid(${rIdx}, ${pIdx}, this)">
+                    <input type="number" class="score-input" placeholder="Score" value="${d.won}" onfocus="this.select()" onkeydown="checkKey(event)" onchange="handleWon(${rIdx}, ${pIdx}, this)">
+                </td>`;
+            });
+            rowHtml += `<td id="bid-sum-${rIdx}" class="total-tricks-col">${rowBidSum}</td></tr>`;
+            bodyHtml += rowHtml;
+        });
+        document.getElementById('tableBody').innerHTML = bodyHtml;
+        calcScores();
+    }
+
+    function checkKey(e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            const inputs = Array.from(document.querySelectorAll('.score-input'));
+            const index = inputs.indexOf(e.target);
+            if (index > -1 && index < inputs.length - 1) inputs[index + 1].focus();
+        }
+    }
+
+    function updateName(pIdx, val) {
+        let state = JSON.parse(localStorage.getItem('ohHellGame'));
+        state.names[pIdx] = val;
+        localStorage.setItem('ohHellGame', JSON.stringify(state));
+    }
+
+    function handleBid(rIdx, pIdx, input) {
+        let state = JSON.parse(localStorage.getItem('ohHellGame'));
+        const val = parseInt(input.value);
+        const handSize = state.rounds[rIdx].handSize;
+        const others = state.rounds[rIdx].data.reduce((s, d, i) => i === pIdx ? s : s + (parseInt(d.bid) || 0), 0);
+        const filled = state.rounds[rIdx].data.filter((d, i) => i !== pIdx && d.bid !== '').length;
+
+        if (filled === state.count - 1 && (others + val) === handSize) {
+            alert(`THE HOOK! Total cannot equal ${handSize}.`);
+            input.value = '';
+            state.rounds[rIdx].data[pIdx].bid = '';
+        } else {
+            state.rounds[rIdx].data[pIdx].bid = input.value;
+            document.getElementById(`bid-sum-${rIdx}`).innerText = others + (val || 0);
+        }
+        localStorage.setItem('ohHellGame', JSON.stringify(state));
+        calcScores();
+    }
+
+    function handleWon(rIdx, pIdx, input) {
+        let state = JSON.parse(localStorage.getItem('ohHellGame'));
+        state.rounds[rIdx].data[pIdx].won = input.value;
+        localStorage.setItem('ohHellGame', JSON.stringify(state));
+        calcScores();
+    }
+
+    function openSuitPicker(el, rIdx) {
+        currentSuitTarget = { el, rIdx };
+        document.getElementById('suitPopup').style.display = 'block';
+    }
+
+    function selectSuit(suit) {
+        let state = JSON.parse(localStorage.getItem('ohHellGame'));
+        state.rounds[currentSuitTarget.rIdx].trump = suit;
+        localStorage.setItem('ohHellGame', JSON.stringify(state));
+        currentSuitTarget.el.innerText = suit;
+        currentSuitTarget.el.classList.remove('back');
+        currentSuitTarget.el.style.fontSize = suit === 'NT' ? '1.4rem' : '2.1rem';
+        currentSuitTarget.el.classList.toggle('red', suit === '♥' || suit === '♦');
+        currentSuitTarget.el.classList.toggle('black', suit === '♠' || suit === '♣' || suit === 'NT');
+        document.getElementById('suitPopup').style.display = 'none';
+    }
+
+    function calcScores() {
+        const state = JSON.parse(localStorage.getItem('ohHellGame'));
+        if (!state) return;
+        const totals = new Array(state.count).fill(0);
+        state.rounds.forEach(r => {
+            r.data.forEach((d, pIdx) => {
+                const b = parseInt(d.bid);
+                const w = parseInt(d.won);
+                if (!isNaN(b) && !isNaN(w)) totals[pIdx] += (b === w) ? (10 + w) : w;
+            });
+        });
+
+        const sortedScores = [...new Set(totals)].sort((a, b) => b - a);
+        const getOrdinal = (n) => {
+            const s = ["th", "st", "nd", "rd"], v = n % 100;
+            return n + (s[(v - 20) % 10] || s[v] || s);
+        };
+
+        totals.forEach((t, i) => {
+            const disp = document.getElementById(`total-${i}`);
+            const rankTag = document.getElementById(`rank-${i}`);
+            const trophy = document.getElementById(`trophy-${i}`);
+            if (disp) {
+                disp.innerText = t;
+                const pos = sortedScores.indexOf(t) + 1;
+                rankTag.innerText = t > 0 ? getOrdinal(pos) : "-";
+                
+                if (t > 0) {
+                    trophy.style.visibility = (pos >= 1 && pos <= 3) ? "visible" : "hidden";
+                    if (pos === 1) trophy.innerText = "👑";
+                    else if (pos === 2) trophy.innerText = "🥈";
+                    else if (pos === 3) trophy.innerText = "🥉";
+                } else {
+                    trophy.style.visibility = "hidden";
+                }
+            }
+        });
+    }
+</script>
+</body>
+</html>

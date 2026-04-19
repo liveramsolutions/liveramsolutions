@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>501 Darts Scoreboard</title>
+<!-- Created by Mark Livera 2025 -->
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        background: #333;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    .container {
+        width: 95vw;
+        height: 95vh;
+        background: #333;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        gap: 40px; /* space between player containers */
+        position: relative;
+    }
+
+    .player-column {
+    flex: 1;
+    max-width: 50%;
+    height: 100%;              /* make it full height of container */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    background: #0a0066;
+    color: gold;
+    border-radius: 10px;
+    overflow-y: auto;
+    box-sizing: border-box;    /* ensures padding doesn't shrink height */
+}
+
+    .player-column h2 {
+        margin-top: 0;
+        text-align: center;
+    }
+
+    .player-input {
+        margin-bottom: 10px;
+        text-align: center;
+    }
+
+    input[type="text"], input[type="number"] {
+        padding: 5px;
+        margin: 5px 0;
+        text-align: center;
+    }
+
+    button {
+        padding: 5px 10px;
+        margin: 5px;
+        cursor: pointer;
+    }
+
+    /* Center dartboard between player containers */
+    .dartboard {
+        width: 120px;
+        position: absolute;
+        top: 2%;
+        left: 50%;
+        transform: translatex(-50%);
+    }
+
+    .history-table {
+        width: 100%;
+        margin-top: 10px;
+        border-collapse: collapse;
+    }
+
+    .history-table th, .history-table td {
+        border: 1px solid gold;
+        padding: 5px;
+        text-align: center;
+    }
+.turn-indicator {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: transparent; /* default invisible */
+    margin-right: 8px;
+}
+.turn-indicator.active {
+    background: limegreen;   /* active turn */
+}
+
+   </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Player 1 Column -->
+    <div class="player-column" id="player1-column">
+        <h2><span class="turn-indicator" id="turn1"></span> <span id="player1-name">Player 1</span></h2>
+        <div class="player-input">
+            <input type="text" id="player1" placeholder="Enter Name">
+            <button onclick="setNames()">Set Name</button>
+        </div>
+        <div class="score-inputs">
+            <input type="number" id="scoreInput1" min="0" max="180" placeholder="Score">
+            <button onclick="addScore(0)">Add Score</button>
+        </div>
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>End Score</th>
+                    <th>Remaining</th>
+                    <th>Finish</th>
+                </tr>
+            </thead>
+            <tbody id="history1"></tbody>
+        </table>
+    </div>
+
+    <!-- Dartboard Image -->
+    <img src="dartboard.png" alt="Dartboard" class="dartboard">
+
+    <!-- Player 2 Column -->
+    <div class="player-column" id="player2-column">
+        <h2><span class="turn-indicator" id="turn2"></span> <span id="player2-name">Player 2</span></h2>
+        <div class="player-input">
+            <input type="text" id="player2" placeholder="Enter Name">
+            <button onclick="setNames()">Set Name</button>
+        </div>
+        <div class="score-inputs">
+            <input type="number" id="scoreInput2" min="0" max="180" placeholder="Score">
+            <button onclick="addScore(1)">Add Score</button>
+        </div>
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>End Score</th>
+                    <th>Remaining</th>
+                    <th>Finish</th>
+                </tr>
+            </thead>
+            <tbody id="history2"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+let scores = [501, 501];
+let histories = [[], []];
+let turnStartScore = [501, 501];
+let currentPlayer = 0;
+
+// Set Names
+function setNames() {
+    const p1 = document.getElementById('player1').value.trim() || 'Player 1';
+    const p2 = document.getElementById('player2').value.trim() || 'Player 2';
+    document.getElementById('player1-name').textContent = p1;
+    document.getElementById('player2-name').textContent = p2;
+}
+
+function addScore(playerIndex) {
+    // Prevent a player from entering a score out of turn
+    if(playerIndex !== currentPlayer) {
+        alert(`It's not your turn!`);
+        return;
+    }
+
+    const scoreInput = document.getElementById(`scoreInput${playerIndex + 1}`);
+    const score = parseInt(scoreInput.value);
+
+    if (isNaN(score) || score < 0 || score > 180) {
+        alert("Invalid score");
+        return;
+    }
+
+    let newScore = scores[playerIndex] - score;
+
+    // Bust conditions: score < 0, score === 1, or finishing without a double
+    if (newScore < 0 || newScore === 1 || (newScore === 0 && score % 2 !== 0)) {
+        alert(`${document.getElementById(`player${playerIndex + 1}-name`).textContent} busted!`);
+        histories[playerIndex].push("BUST");
+        newScore = turnStartScore[playerIndex]; // revert to start of turn
+    } else {
+        histories[playerIndex].push(score);
+    }
+
+    scores[playerIndex] = newScore;
+    turnStartScore[playerIndex] = newScore;
+
+    // Update history table
+    updateHistory(playerIndex);
+
+    // Clear the input field
+    scoreInput.value = '';
+
+    // Check for win
+    if (newScore === 0) {
+        alert(`${document.getElementById(`player${playerIndex + 1}-name`).textContent} wins the leg!`);
+        // Optionally, you could reset the game here
+    }
+
+    // Switch to next player
+    currentPlayer = 1 - currentPlayer;
+    highlightCurrentPlayer(); // update the green turn indicator
+}
+
+document.getElementById('scoreInput1').addEventListener('keypress', function(e) {
+    if(e.key === 'Enter' && currentPlayer === 0) addScore(0);
+});
+document.getElementById('scoreInput2').addEventListener('keypress', function(e) {
+    if(e.key === 'Enter' && currentPlayer === 1) addScore(1);
+});
+
+
+// Update history tables
+function updateHistory(playerIndex) {
+    const tbody = document.getElementById(`history${playerIndex+1}`);
+    tbody.innerHTML = '';
+    histories[playerIndex].forEach((val, idx) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${val}</td><td>${scores[playerIndex]}</td><td>${suggestFinish(scores[playerIndex])}</td>`;
+        tbody.appendChild(row);
+    });
+}
+
+// Highlight current player
+function highlightCurrentPlayer() {
+    document.getElementById('turn1').classList.remove('active');
+    document.getElementById('turn2').classList.remove('active');
+    document.getElementById(`turn${currentPlayer + 1}`).classList.add('active');
+}
+
+// Suggest finish
+function suggestFinish(score) {
+    if(score < 2) return '';
+    const finishes = {
+        170:"T20 T20 Bull", 167:"T20 T19 Bull", 164:"T20 T18 Bull", 161:"T20 T17 Bull",
+        160:"T20 T20 D20", 158:"T20 T20 D19", 157:"T20 T19 D20", 156:"T20 T20 D18",
+        155:"T20 T19 D19", 154:"T20 T18 D20", 153:"T20 T19 D18", 152:"T20 T20 D16",
+        151:"T20 T17 D20", 150:"T20 T18 D18", 149:"T20 T19 D16", 148:"T20 T16 D20",
+        147:"T20 T17 D18", 146:"T20 T18 D16", 145:"T20 T15 D20", 144:"T20 T20 D12",
+        143:"T20 T17 D16", 142:"T20 T14 D20", 141:"T20 T19 D12", 140:"T20 T20 D10",
+        139:"T20 T13 D20", 138:"T20 T18 D12", 137:"T20 T19 D10", 136:"T20 T20 D8",
+        135:"T20 T17 D12", 134:"T20 T14 D16", 133:"T20 T19 D8", 132:"T20 T16 D12",
+        131:"T20 T13 D16", 130:"T20 T20 D5", 129:"T19 T16 D12", 128:"T18 T14 D16",
+        127:"T20 T17 D8", 126:"T19 T19 D6", 125:"T20 T15 D10", 124:"T20 T12 D16",
+        123:"T19 T16 D9", 122:"T18 T18 D7", 121:"T20 T11 D14", 120:"T20 20 D20",
+        119:"T19 10 D20", 118:"T20 18 D20", 117:"T20 17 D20", 116:"T20 16 D20",
+        115:"T20 15 D20", 114:"T20 14 D20", 113:"T20 13 D20", 112:"T20 12 D20",
+        111:"T20 11 D20", 110:"T20 10 D20", 109:"T20 9 D20", 108:"T20 8 D20",
+        107:"T20 7 D20", 106:"T20 6 D20", 105:"T20 5 D20", 104:"T18 18 D16",
+        103:"T19 10 D20", 102:"T20 10 D16", 101:"T17 10 D20", 100:"T20 D20",
+        99:"T19 10 D16", 98:"T20 D19", 97:"T19 D20", 96:"T20 D18", 95:"T19 D19",
+        94:"T18 D20", 93:"T19 D18", 92:"T20 D16", 91:"T17 D20", 90:"T18 D18",
+        89:"T19 D16", 88:"T16 D20", 87:"T17 D18", 86:"T18 D16", 85:"T15 D20",
+        84:"T20 D12", 83:"T17 D16", 82:"T14 D20", 81:"T19 D12", 80:"T20 D10",
+        79:"T13 D20", 78:"T18 D12", 77:"T19 D10", 76:"T20 D8", 75:"T17 D12",
+        74:"T14 D16", 73:"T19 D8", 72:"T16 D12", 71:"T13 D16", 70:"T18 D8",
+        69:"T19 D6", 68:"T20 D4", 67:"T17 D8", 66:"T10 D18", 65:"T19 D4",
+        64:"T16 D8", 63:"T13 D12", 62:"T10 D16", 61:"T15 D8", 60:"20 D20",
+        59:"19 D20", 58:"18 D20", 57:"17 D20", 56:"16 D20", 55:"15 D20",
+        54:"14 D20", 53:"13 D20", 52:"12 D20", 51:"11 D20", 50:"10 D20",
+        40:"D20", 32:"D16", 24:"D12", 16:"D8", 8:"D4", 2:"D1"
+    };
+    return finishes[score] || '';
+}
+</script>
+
+</body>
+</html>

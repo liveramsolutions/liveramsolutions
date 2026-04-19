@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<!-- Created by Mark Livera 2025 -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Timer testing</title>
+  <style>
+    :root {
+      --bg-color: #2a2a2a;
+      --container-bg: #22328b;
+      --box-bg: rgba(0, 0, 0, 0.486);
+      --header-bg: rgba(0, 0, 0, 0.4);
+      --text-light: rgb(214, 214, 214);
+      --accent-yellow: rgba(236, 224, 53, 0.966);
+    }
+
+    *, *::before, *::after {
+      box-sizing: inherit;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      box-sizing: border-box;
+    }
+
+    .timer-container {
+      background-color: var(--container-bg);
+      width: 90vw;
+      height: 95vh;
+      padding: 1.5vw 2vw;
+      border-radius: 15px;
+      box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.678);
+      color: var(--text-light);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .header-box {
+      width: 100%;
+      margin-bottom: 1.5vh;
+      padding: 1vh 1.5vw;
+      background: var(--header-bg);
+      border-radius: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-box input {
+      flex-grow: 1;
+      font-size: clamp(1.5rem, 3vw, 3.5vw);
+      background: transparent;
+      border: none;
+      outline: none;
+      color: greenyellow;
+      text-align: left;
+      font-weight: bolder;
+    }
+
+    .header-time {
+      font-size: clamp(1.5rem, 3vw, 3.5vw);
+      color: white;
+      margin-left: 1vw;
+      white-space: nowrap;
+      display: flex;
+      align-items: baseline;
+      gap: 0.3rem;
+      text-align: right;
+    }
+
+    .time-box {
+      width: 100%;
+      flex-grow: 1;
+      font-size: clamp(1.5rem, 3.5vw, 3.5vw);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--box-bg);
+      border-radius: 20px;
+      margin-bottom: 1.5vh;
+      padding: 1vh 1.5vw;
+      white-space: nowrap;
+      transition: color 0.3s ease-in-out;
+    }
+
+    .input-container {
+      width: 100%;
+      padding: 1.5vw 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5vw;
+      justify-content: space-between;
+      margin-top: auto;
+      box-sizing: border-box;
+    }
+
+    .input-box {
+      flex: 1 1 30%;
+      min-width: 270px;
+      max-width: 800px;
+      padding: 1vh 1vw;
+      font-size: clamp(1rem, 2vw, 2vw);
+      display: flex;
+      flex-wrap: nowrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1vw;
+      background: var(--box-bg);
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    .input-box label {
+      flex: 1;
+      text-align: left;
+    }
+
+    .input-box input {
+      width: 100%;
+      font-size: clamp(1rem, 2vw, 2vw);
+      text-align: center;
+      font-family: monospace;
+      background-color: white;
+      color: black;
+      border-radius: 5px;
+      padding: 0.3rem 0.5rem;
+      border: none;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1vw;
+      width: 100%;
+      padding: 1.5vh 0;
+      margin-top: auto;
+      box-sizing: border-box;
+    }
+
+    .buttons button {
+      min-width: 0;
+      width: 100%;
+      max-width: none;
+      padding: clamp(1rem, 2vw, 1.5rem) clamp(0.5rem, 1vw, 1rem);
+      font-size: clamp(0.6rem, 2vw, 2.5rem);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      color: white;
+      box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.4);
+      transition: transform 0.1s ease-in-out;
+      box-sizing: border-box;
+      line-height: 1.1;
+    }
+
+    .buttons button:active {
+      transform: translateY(5px);
+    }
+
+    .start { background-color: #065e1c; }
+    .pause { background-color: #cfaf2e; }
+    .stop { background-color: #1E90ff; }
+    .reset { background-color: #DC143C; }
+
+    input:focus-visible, button:focus-visible {
+      outline: 2px solid white;
+      outline-offset: 2px;
+    }
+    .active-label {
+      color: var(--accent-yellow);
+      font-weight: normal;
+    }
+    .active-time {
+      color: var(--accent-yellow);
+    }
+    .warning-time {
+  color: #FF4136; /* bright red */
+  font-weight: bold;
+  transition: color 0.3s ease-in-out;
+}
+
+  </style>
+</head>
+<body>
+  <div class="timer-container">
+    <div class="header-box">
+      <input type="text" id="headerTitle" class="header-input" placeholder="Click here to enter event name..." />
+      <div id="currentTime" class="header-time"></div>
+    </div>
+    <div class="time-box">
+      <span class="label" id="workingLabel">Total Event Time:</span>
+      <span class="value" id="runningTime">0:00:00</span>
+    </div>
+    <div class="time-box">
+      <span class="label" id="totalElapsedLabel">Total Elapsed Time:</span>
+      <span class="value" id="totalTime">0:00:00</span>
+    </div>
+    <div class="time-box">
+      <span class="label" id="breakLabel">Current Break Time:</span>
+      <span class="value" id="pausedTime">0:00:00</span>
+    </div>
+    <div class="time-box">
+      <span class="label" id="totalBreakLabel">Total Break Time:</span>
+      <span class="value" id="totalPausedTime">0:00:00</span>
+    </div>
+    <div class="input-container">
+      <div class="input-box">
+        <label for="eventDuration">Event Duration (HH:MM):</label>
+        <input type="text" id="eventDuration" maxlength="5" placeholder="HH:MM" title="Type 4 digits like 0130 for 01:30" />
+      </div>
+      <div class="input-box">
+        <label for="breakAllowance">Break Allowance (HH:MM):</label>
+        <input type="text" id="breakAllowance" maxlength="5" placeholder="HH:MM" title="Type 4 digits like 0030 for 00:30" />
+      </div>
+    </div>
+    <div class="buttons">
+      <button class="start" onclick="startTimer()">Start Timer</button>
+      <button class="pause" onclick="pauseRestartTimer()">Break/Restart</button>
+      <button class="stop" onclick="stopTimer()">Stop</button>
+      <button class="reset" onclick="resetTimer()">Reset All</button>
+    </div>
+  </div>
+
+   <script>
+    let totalTime = 0, runningTime = 0, totalPausedTime = 0, pausedTime = 0;
+    let timerInterval = null;
+    let running = false, paused = false;
+    let countdownMode = false;
+    let eventDurationSeconds = 0;
+    let breakCountdownMode = false;
+    let breakAllowanceSeconds = 0;
+    let preventAutoLoad = false;
+    let hasStarted = false;
+
+    function updateDisplay() {
+      document.getElementById("totalTime").innerText = formatTime(totalTime);
+      document.getElementById("runningTime").innerText = formatTime(runningTime);
+      document.getElementById("pausedTime").innerText = formatTime(pausedTime);
+      document.getElementById("totalPausedTime").innerText = formatTime(totalPausedTime);
+
+      document.getElementById("workingLabel").classList.toggle("active-label", running);
+      document.getElementById("breakLabel").classList.toggle("active-label", paused);
+      document.getElementById("runningTime").classList.toggle("active-time", running);
+      document.getElementById("pausedTime").classList.toggle("active-time", paused);
+
+updateLabelText();
+
+
+      const runningTimeElement = document.getElementById("runningTime");
+if (countdownMode && runningTime <= 60) {
+  runningTimeElement.classList.add("warning-time");
+} else {
+  runningTimeElement.classList.remove("warning-time");
+}
+
+    }
+function updateLabelText() {
+  const workingLabel = document.getElementById("workingLabel");
+  const totalBreakLabel = document.getElementById("totalBreakLabel");
+  const eventValue = document.getElementById("eventDuration").value.trim();
+  const breakValue = document.getElementById("breakAllowance").value.trim();
+  const eventParts = eventValue.split(":").map(part => parseInt(part, 10) || 0);
+  const eventSeconds = (eventParts[0] || 0) * 3600 + (eventParts[1] || 0) * 60;
+  const breakParts = breakValue.split(":").map(part => parseInt(part, 10) || 0);
+  const breakSeconds = (breakParts[0] || 0) * 3600 + (breakParts[1] || 0) * 60;
+  workingLabel.innerText = eventSeconds > 0 ? "Remaining Event Time:" : "Total Event Time:";
+  totalBreakLabel.innerText = breakSeconds > 0 ? "Remaining Break Time:" : "Total Break Time:";
+}
+
+    function formatTime(seconds) {
+      const hrs = Math.floor(seconds / 3600);
+      const mins = Math.floor(seconds / 60) % 60;
+      const secs = seconds % 60;
+      return `${hrs}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    function saveTimerState() {
+      if (preventAutoLoad) return;
+      const state = {
+        totalTime, runningTime, pausedTime, totalPausedTime,
+        running, paused,
+        countdownMode, eventDurationSeconds,
+        breakCountdownMode, breakAllowanceSeconds,
+        eventDurationStr: document.getElementById("eventDuration").value,
+        breakAllowanceStr: document.getElementById("breakAllowance").value,
+        timestamp: Date.now()
+      };
+      localStorage.setItem("timerState", JSON.stringify(state));
+    }
+
+    function loadTimerState() {
+      if (preventAutoLoad) return;
+      const saved = localStorage.getItem("timerState");
+      if (saved) {
+        const state = JSON.parse(saved);
+        const now = Date.now();
+        const delta = Math.floor((now - state.timestamp) / 1000);
+
+        if (state.running || state.paused) {
+          totalTime = state.totalTime + delta;
+          runningTime = state.running ? state.runningTime + delta : state.runningTime;
+          totalPausedTime = state.paused ? state.totalPausedTime + delta : state.totalPausedTime;
+          pausedTime = state.paused ? state.pausedTime + delta : 0;
+        } else {
+          totalTime = state.totalTime;
+          runningTime = state.runningTime;
+          totalPausedTime = state.totalPausedTime;
+          pausedTime = state.pausedTime;
+        }
+
+        running = state.running;
+        paused = state.paused;
+        countdownMode = state.countdownMode;
+        breakCountdownMode = state.breakCountdownMode;
+        eventDurationSeconds = state.eventDurationSeconds;
+        breakAllowanceSeconds = state.breakAllowanceSeconds;
+
+        document.getElementById("eventDuration").value = state.eventDurationStr || "";
+        document.getElementById("breakAllowance").value = state.breakAllowanceStr || "";
+        formatSmartTimeInput(document.getElementById("eventDuration"));
+        formatSmartTimeInput(document.getElementById("breakAllowance"));
+
+        if (running || paused) {
+          if (paused) startTimer(true);
+          else startTimer();
+        }
+        updateDisplay();
+      }
+
+      const savedHeader = sessionStorage.getItem("headerText");
+      if (savedHeader) {
+        document.getElementById("headerTitle").value = savedHeader;
+      }
+    }
+function startTimer(resume = false) {
+  setInputsDisabled(true); 
+}
+function stopTimer() {
+  setInputsDisabled(false);
+}
+
+function resetTimer() {
+   setInputsDisabled(false);
+}
+function setInputsDisabled(disabled) {
+  document.getElementById("eventDuration").disabled = disabled;
+  document.getElementById("breakAllowance").disabled = disabled;
+  document.getElementById("headerTitle").disabled = disabled; 
+}
+
+    function startTimer(resume = false) {
+      if (!timerInterval) {
+  if (!hasStarted) {
+    hasStarted = true;
+    setInputsDisabled(true);
+  }
+        if (!countdownMode && eventDurationSeconds === 0) {
+          const [hrs, mins] = document.getElementById("eventDuration").value.split(":" ).map(x => parseInt(x, 10) || 0);
+          eventDurationSeconds = hrs * 3600 + mins * 60;
+          countdownMode = eventDurationSeconds > 0;
+          if (countdownMode) runningTime = eventDurationSeconds;
+        }
+
+        if (!breakCountdownMode && breakAllowanceSeconds === 0) {
+          const [bHrs, bMins] = document.getElementById("breakAllowance").value.split(":" ).map(x => parseInt(x, 10) || 0);
+          breakAllowanceSeconds = bHrs * 3600 + bMins * 60;
+          breakCountdownMode = breakAllowanceSeconds > 0;
+          if (breakCountdownMode) totalPausedTime = breakAllowanceSeconds;
+        }
+
+        updateDisplay();
+
+timerInterval = setInterval(() => {
+  totalTime++;
+
+  if (running) {
+  if (countdownMode) {
+    runningTime = Math.max(0, runningTime - 1);
+    if (runningTime === 0) {
+      stopTimer();
+      return;
+    }
+  } else {
+    runningTime++;
+  }
+}
+
+if (paused) {
+  pausedTime++;
+  if (breakCountdownMode) {
+    totalPausedTime = Math.max(0, totalPausedTime - 1);
+    if (totalPausedTime === 0) {
+      paused = false;
+      running = true;
+      pausedTime = 0;
+      updateDisplay();
+      saveTimerState();
+      return;
+    }
+  } else {
+    totalPausedTime++;
+  }
+}
+
+  updateDisplay();
+  saveTimerState();
+}, 1000);
+
+
+  updateDisplay();
+  console.log("hasStarted:", hasStarted, "running:", running, "paused:", paused);
+  saveTimerState();
+
+      }
+
+      running = true;
+      paused = false;
+      if (!resume) pausedTime = 0;
+      updateDisplay();
+    }
+
+    function pauseRestartTimer() {
+      if (!timerInterval) {
+        startTimer();
+        running = false;
+        paused = true;
+        pausedTime = 0;
+      } else {
+        if (paused) {
+          pausedTime = 0;
+          running = true;
+          paused = false;
+        } else {
+          running = false;
+          paused = true;
+          pausedTime = 0;
+        }
+      }
+      updateDisplay();
+      saveTimerState();
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      running = false;
+      paused = false;
+      updateDisplay();
+      updateCurrentTime();
+      
+    }
+
+    function resetTimer() {
+  const countdownFinished =
+    (countdownMode && runningTime === 0) ||
+    (breakCountdownMode && totalPausedTime === 0);
+
+  if (running || paused) {
+    if (!countdownFinished) {
+  alert("You can't reset while the timer is running. Stop it or wait until it finishes.");
+  return;
+}
+  }
+  preventAutoLoad = true;
+  hasStarted = false;
+  stopTimer();
+      totalTime = 0;
+      runningTime = 0;
+      totalPausedTime = 0;
+      pausedTime = 0;
+      countdownMode = false;
+      breakCountdownMode = false;
+      eventDurationSeconds = 0;
+      breakAllowanceSeconds = 0;
+
+      const eventInput = document.getElementById("eventDuration");
+      const breakInput = document.getElementById("breakAllowance");
+
+      eventInput.value = "";
+      breakInput.value = "";
+
+      localStorage.removeItem("timerState");
+      sessionStorage.removeItem("headerText");
+
+      document.getElementById("headerTitle").value = "";
+      updateDisplay();
+
+      setTimeout(() => {
+        preventAutoLoad = false;
+      }, 100);
+      setInputsDisabled(false);
+    }
+
+    function formatSmartTimeInput(inputElement) {
+      const format = () => {
+        const raw = inputElement.value.replace(/\D/g, "").slice(-4);
+        const padded = raw.padStart(4, "0");
+        const hrs = padded.slice(0, 2);
+        let mins = padded.slice(2);
+        if (parseInt(mins, 10) > 59) mins = "59";
+        inputElement.value = `${hrs}:${mins}`;
+      };
+
+      inputElement.addEventListener("blur", format);
+
+      inputElement.addEventListener("paste", (e) => {
+        e.preventDefault();
+        const pasted = (e.clipboardData || window.clipboardData).getData("text");
+        const digits = pasted.replace(/\D/g, "").slice(-4).padStart(4, "0");
+        const hrs = digits.slice(0, 2);
+        let mins = digits.slice(2);
+        if (parseInt(mins, 10) > 59) mins = "59";
+        inputElement.value = `${hrs}:${mins}`;
+      });
+    }
+
+    function updateCurrentTime() {
+      const now = new Date();
+      let hours = now.getHours();
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      document.getElementById("currentTime").innerHTML = `<span>${hours}:${minutes}</span><span>${ampm}</span>`;
+    }
+
+    setInterval(updateCurrentTime, 1000);
+    updateCurrentTime();
+
+    document.getElementById("headerTitle").addEventListener("input", () => {
+      sessionStorage.setItem("headerText", document.getElementById("headerTitle").value);
+    });
+
+    window.onload = () => {
+      const eventInput = document.getElementById("eventDuration");
+      const breakInput = document.getElementById("breakAllowance");
+      formatSmartTimeInput(eventInput);
+      formatSmartTimeInput(breakInput);
+      document.getElementById("eventDuration").addEventListener("input", updateLabelText);
+      document.getElementById("breakAllowance").addEventListener("input", updateLabelText);
+      updateLabelText();
+      loadTimerState();
+      document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    updateDisplay();
+  }
+});
+    };
+  </script>
+</body>
+</html>

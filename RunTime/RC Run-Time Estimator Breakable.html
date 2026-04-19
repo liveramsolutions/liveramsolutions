@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RC Flight & Run-Time</title>
+    <!-- Created by Mark L 2026 -->
+    <style>
+        :root { --primary: #1e293b; --accent: #3b82f6; --text: #f8fafc; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: var(--text); padding: 20px; }
+        .card { background: var(--primary); padding: 2rem; border-radius: 1rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); width: 100%; max-width: 600px; margin: auto; border: 1px solid #334155; }
+        h2 { margin: 0 0 1.5rem; color: var(--accent); text-align: center; text-transform: uppercase; letter-spacing: 2px; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+        label { display: block; font-size: 0.75rem; font-weight: bold; margin-bottom: 0.5rem; color: #94a3b8; text-transform: uppercase; }
+        select, input { width: 100%; padding: 0.75rem; border: 1px solid #334155; border-radius: 0.5rem; background: #0f172a; color: white; box-sizing: border-box; }
+        input:focus { border-color: var(--accent); outline: none; }
+        .slider-group { margin: 1.5rem 0; }
+        button { width: 100%; padding: 1rem; background: var(--accent); color: white; border: none; border-radius: 0.5rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:hover { background: #2563eb; }
+        .result { margin-top: 1.5rem; padding: 1.5rem; border-radius: 0.5rem; background: #334155; border: 1px solid var(--accent); display: none; text-align: center; }
+        .time-val { font-size: 3.5rem; font-weight: 800; color: white; display: block; }
+        .alarm { color: #fbbf24; font-weight: bold; margin-top: 0.5rem; display: block; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>RC Runtime Pro</h2>
+    
+    <div class="row">
+        <div class="group">
+            <label>Category</label>
+            <select id="category" onchange="updatePresets()">
+                <option value="plane">Plane</option>
+                <option value="quad">Quadcopter</option>
+                <option value="car">RC Car</option>
+                <option value="boat">RC Boat</option>
+            </select>
+        </div>
+        <div class="group">
+            <label>Model Preset</label>
+            <select id="preset" onchange="applyPreset()"></select>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="group">
+            <label>Battery (S)</label>
+            <input type="number" id="cells">
+        </div>
+        <div class="group">
+            <label>Capacity (mAh)</label>
+            <input type="number" id="mah">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="group">
+            <label>Motor KV (Optional)</label>
+            <input type="number" id="kv" placeholder="Optional">
+        </div>
+        <div class="group">
+            <label id="propLabel">Prop (Optional)</label>
+            <input type="number" id="prop" placeholder="Optional">
+        </div>
+    </div>
+
+    <div class="slider-group">
+        <label style="display:flex; justify-content:space-between">Avg Throttle <span id="tLabel" style="color:var(--accent)">70%</span></label>
+        <input type="range" id="throttle" min="10" max="100" value="70" oninput="document.getElementById('tLabel').innerText = this.value + '%'">
+    </div>
+
+    <button onclick="calculate()">RUN CALCULATION</button>
+    <button onclick="resetInputs()" style="background: #64748b; margin-top: 0.5rem;">RESET TO PRESET</button>
+
+    <div id="resultBox" class="result">
+        <span style="font-size: 0.75rem; color: #94a3b8; text-transform: uppercase;">Estimated Runtime</span>
+        <span class="time-val" id="timeOutput">--</span>
+        <span class="alarm" id="alarmOutput"></span>
+        <div id="debug" style="font-size: 0.75rem; color: #94a3b8; margin-top: 10px;"></div>
+    </div>
+</div>
+
+<script>
+const data = {
+    plane: [
+        { name: "Trainer (e.g. Ranger 1220)", s: 3, mah: 2200, kv: 1200, prop: 10, cruiseAmps: 11, maxAmps: 25, curve: 1.8 },
+        { name: "64mm EDF Jet", s: 4, mah: 2200, kv: 3150, prop: 2.5, cruiseAmps: 30, maxAmps: 55, curve: 2.7 },
+        { name: "90mm EDF Jet", s: 6, mah: 5000, kv: 1450, prop: 3.6, cruiseAmps: 65, maxAmps: 120, curve: 3.1 },
+        { name: "Sport / 3D (4S Setup)", s: 4, mah: 2200, kv: 1100, prop: 12, cruiseAmps: 18, maxAmps: 45, curve: 2.2 },
+        { name: "Motor Glider", s: 3, mah: 1300, kv: 1000, prop: 9, cruiseAmps: 6, maxAmps: 18, curve: 1.4 }
+    ],
+    quad: [
+        { name: "5-inch FPV Freestyle", s: 6, mah: 1300, kv: 1900, prop: 5, cruiseAmps: 18, maxAmps: 120, curve: 2.4 },
+        { name: "Tiny Whoop", s: 1, mah: 300, kv: 19000, prop: 1.5, cruiseAmps: 4, maxAmps: 12, curve: 2.1 }
+    ],
+    car: [
+        { name: "1/10 Basher (Brushless)", s: 3, mah: 5000, kv: 3500, prop: 4, cruiseAmps: 15, maxAmps: 80, curve: 2.0 },
+        { name: "1/10 Rock Crawler", s: 3, mah: 3000, kv: 1800, prop: 4.5, cruiseAmps: 3, maxAmps: 15, curve: 1.5 }
+    ],
+    boat: [
+        { name: "Speed Boat (Mono)", s: 4, mah: 5000, kv: 2000, prop: 1.5, cruiseAmps: 40, maxAmps: 100, curve: 3.0 }
+    ]
+};
+
+function updatePresets() {
+    const cat = document.getElementById('category').value;
+    const pSelect = document.getElementById('preset');
+    pSelect.innerHTML = "";
+    data[cat].forEach((p, i) => pSelect.options.add(new Option(p.name, i)));
+    document.getElementById('propLabel').innerText = (cat === 'car') ? "Tire Size" : "Prop Size";
+    applyPreset();
+}
+
+function applyPreset() {
+    const cat = document.getElementById('category').value;
+    const preset = data[cat][document.getElementById('preset').value];
+    document.getElementById('cells').value = preset.s;
+    document.getElementById('mah').value = preset.mah;
+    document.getElementById('kv').value = preset.kv;
+    document.getElementById('prop').value = preset.prop;
+}
+
+function calculate() {
+    const cat = document.getElementById('category').value;
+    const preset = data[cat][document.getElementById('preset').value];
+    const s = parseFloat(document.getElementById('cells').value);
+    const mah = parseFloat(document.getElementById('mah').value);
+    const throttle = parseFloat(document.getElementById('throttle').value) / 100;
+
+    const currentKV = parseFloat(document.getElementById('kv').value) || preset.kv;
+    const currentProp = parseFloat(document.getElementById('prop').value) || preset.prop;
+
+    const kvFactor = currentKV / preset.kv;
+    const propFactor = currentProp / preset.prop;
+
+    const adjustedMaxAmps = preset.maxAmps * kvFactor * propFactor;
+    
+    let calculatedAmps = adjustedMaxAmps * Math.pow(throttle, preset.curve);
+    const idleAmps = (cat === 'plane') ? 1.5 : 3.0; 
+    const finalAmps = Math.max(calculatedAmps, idleAmps);
+
+    const reserve = (cat === 'plane' || cat === 'car') ? 0.80 : 0.75;
+    const usableAh = (mah / 1000) * reserve;
+    const runtimeMinutes = ((usableAh / finalAmps) * 60) * 0.9;
+
+    document.getElementById('resultBox').style.display = 'block';
+    document.getElementById('timeOutput').innerText = runtimeMinutes.toFixed(1) + "m";
+    
+    const alarmVoltage = (s * 3.4).toFixed(1);
+    document.getElementById('alarmOutput').innerText = `Land at: ${alarmVoltage}V (${(3.4).toFixed(1)}V/cell)`;
+    
+    document.getElementById('debug').innerHTML = `
+        <b>Draw:</b> ~${finalAmps.toFixed(1)}A | 
+        <b>Adj. Max:</b> ${adjustedMaxAmps.toFixed(1)}A
+    `;
+}
+function resetInputs() {
+    updatePresets();
+}
+
+updatePresets();
+</script>
+</body>
+</html>

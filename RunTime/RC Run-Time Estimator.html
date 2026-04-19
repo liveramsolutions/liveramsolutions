@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro RC Run-Time Estimator</title>
+    <!-- Created by Mark Livera 2026 -->
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; color: #333; }
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+        h2 { margin-top: 0; color: #1a73e8; border-bottom: 2px solid #e8eaed; padding-bottom: 10px; }
+        label { display: block; margin: 15px 0 5px; font-size: 0.85rem; font-weight: bold; color: #5f6368; }
+        select, input { width: 100%; padding: 12px; border: 1px solid #dadce0; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        button { width: 100%; margin-top: 25px; padding: 15px; background: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1.1rem; font-weight: bold; transition: background 0.2s; }
+        button:hover { background: #1557b0; }
+        .result-box { margin-top: 25px; padding: 20px; border-radius: 10px; text-align: center; display: none; background: #e8f0fe; border: 1px solid #d2e3fc; }
+        .stats { font-size: 0.8rem; color: #70757a; margin-top: 10px; line-height: 1.4; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>RC Runtime Calc</h2>
+    
+    <label>1. Select Vehicle Type</label>
+    <select id="category" onchange="updatePresets()">
+        <option value="quad">Quadcopter (Drone)</option>
+        <option value="plane">Fixed Wing (Plane)</option>
+        <option value="car">RC Car / Basher</option>
+        <option value="boat">RC Boat</option>
+    </select>
+
+    <label>2. Select Preset</label>
+    <select id="preset">
+        </select>
+
+    <div class="grid">
+        <div class="input-group">
+            <label>Battery Cells (S)</label>
+            <input type="number" id="cells" placeholder="Default">
+        </div>
+        <div class="input-group">
+            <label>Capacity (mAh)</label>
+            <input type="number" id="mah" placeholder="Default">
+        </div>
+    </div>
+
+    <label>Throttle Style (Avg %)</label>
+    <input type="range" id="throttle" min="10" max="100" value="50" oninput="this.nextElementSibling.value = this.value + '%'">
+    <output style="display:block; text-align:center; font-weight:bold;">50%</output>
+
+    <button onclick="calculate()">Calculate Flight/Run Time</button>
+
+    <div id="resultContainer" class="result-box">
+        <div style="font-size: 0.9rem; color: #1967d2;">ESTIMATED RUN TIME</div>
+        <div id="timeOutput" style="font-size: 2rem; font-weight: bold; color: #1a73e8;"></div>
+        <div id="accuracyNote" class="stats"></div>
+    </div>
+</div>
+
+<script>
+const presets = {
+    quad: [
+        { name: "5-inch Freestyle (Standard)", kv: 2300, s: 4, mah: 1500, load: 1.2 },
+        { name: "Tiny Whoop", kv: 18000, s: 1, mah: 300, load: 1.0 },
+        { name: "7-inch Long Range", kv: 1300, s: 6, mah: 3000, load: 0.8 }
+    ],
+    plane: [
+        { name: "Park Flyer", kv: 1400, s: 3, mah: 2200, load: 0.6 },
+        { name: "High Speed Wing", kv: 2500, s: 4, mah: 1800, load: 1.1 },
+        { name: "Glider / Endurance", kv: 900, s: 3, mah: 5000, load: 0.4 }
+    ],
+    car: [
+        { name: "1/10 Scale Basher", kv: 3500, s: 3, mah: 5000, load: 0.9 },
+        { name: "1/8 Scale Crawler", kv: 1900, s: 4, mah: 5000, load: 0.5 },
+        { name: "Micro Car (1/24)", kv: 8000, s: 2, mah: 600, load: 0.7 }
+    ],
+    boat: [
+        { name: "Deep-V Speedboat", kv: 2000, s: 6, mah: 5000, load: 1.5 },
+        { name: "Scale Ship", kv: 800, s: 2, mah: 3000, load: 0.4 }
+    ]
+};
+
+function updatePresets() {
+    const cat = document.getElementById('category').value;
+    const presetSelect = document.getElementById('preset');
+    presetSelect.innerHTML = "";
+    
+    presets[cat].forEach((p, index) => {
+        let opt = document.createElement('option');
+        opt.value = index;
+        opt.innerHTML = p.name;
+        presetSelect.appendChild(opt);
+    });
+}
+
+function calculate() {
+    const cat = document.getElementById('category').value;
+    const presetIdx = document.getElementById('preset').value;
+    const selectedPreset = presets[cat][presetIdx];
+
+    // Use input values if provided, otherwise use preset defaults
+    const s = parseFloat(document.getElementById('cells').value) || selectedPreset.s;
+    const mah = parseFloat(document.getElementById('mah').value) || selectedPreset.mah;
+    const kv = selectedPreset.kv;
+    const dragMultiplier = selectedPreset.load;
+    const throttle = document.getElementById('throttle').value / 100;
+
+    const volts = s * 3.7;
+    const ah = mah / 1000;
+
+    // Physics approximation: 
+    // Boats have high drag (water), Planes have lift, Quads fight gravity constantly.
+    const ampDraw = (kv * volts * dragMultiplier / 1000) * Math.pow(throttle, 2.2) + 1.5;
+    
+    let minutes = (ah / ampDraw) * 60 * 0.8; // 80% LiPo safety rule
+
+    document.getElementById('resultContainer').style.display = 'block';
+    document.getElementById('timeOutput').innerHTML = minutes.toFixed(1) + " min";
+    document.getElementById('accuracyNote').innerHTML = 
+        `Assumes ${s}S ${mah}mAh battery at ${kv}KV.<br>` +
+        `Current draw is significantly higher at full throttle.`;
+}
+
+// Initialize on load
+updatePresets();
+</script>
+
+</body>
+</html>

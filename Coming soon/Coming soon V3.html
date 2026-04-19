@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coming Soon</title>
+
+<!-- Created by Mark L -->
+
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  body {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at 20% 20%, #0f172a, #020617);
+    color: #e2e8f0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* animated tech grid (fixed seamless motion) */
+  body::before {
+    content: "";
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background-image:
+      linear-gradient(rgba(56,189,248,0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(56,189,248,0.08) 1px, transparent 1px);
+    background-size: 40px 40px;
+    transform: rotate(15deg);
+    animation: gridMove 10s linear infinite;
+    will-change: background-position;
+  }
+
+  @keyframes gridMove {
+    0% { background-position: 0 0; }
+    100% { background-position: 40px 40px; }
+  }
+
+  .container {
+    position: relative;
+    width: 50vw;
+    max-width: 800px;
+    padding: 70px;
+    text-align: center;
+    background: rgba(15,23,42,0.65);
+    border: 1px solid rgba(56,189,248,0.25);
+    border-radius: 20px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 0 60px rgba(56,189,248,0.15);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  h1 {
+    font-size: 4rem;
+    letter-spacing: 3px;
+    margin-bottom: 15px;
+    color: #38bdf8;
+  }
+
+  .signature {
+    font-size: 1rem;
+    margin-bottom: 30px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    background: linear-gradient(90deg,#d4af37,#ffd700,#f5d76e,#d4af37);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 10px rgba(212,175,55,0.4);
+    animation: goldFlow 4s linear infinite;
+  }
+
+  @keyframes goldFlow {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
+  }
+
+  p {
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+    color: #94a3b8;
+  }
+
+  .privacy-badge {
+    margin: 20px 0 40px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    max-width: 600px;
+  }
+
+  .privacy-badge div {
+    padding: 8px 14px;
+    font-size: 0.75rem;
+    border-radius: 999px;
+    background: rgba(2,6,23,0.8);
+    border: 1px solid rgba(56,189,248,0.25);
+    color: #94a3b8;
+  }
+
+  .privacy-badge div:hover {
+    color: #38bdf8;
+    border-color: rgba(56,189,248,0.5);
+    box-shadow: 0 0 10px rgba(56,189,248,0.2);
+  }
+
+  footer {
+    margin-top: auto;
+    padding-top: 20px;
+    font-size: 0.85rem;
+    color: #475569;
+    text-align: center;
+    width: 100%;
+    border-top: 1px solid rgba(56,189,248,0.15);
+  }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>Coming Soon</h1>
+
+  <div class="signature">LiveramSolutions</div>
+
+  <p>Building something smarter, faster, and better.</p>
+
+  <div class="privacy-badge">
+    <div>No tracking</div>
+    <div>No sign-ups</div>
+    <div>No uploads</div>
+    <div>No data collection</div>
+    <div>No logins</div>
+    <div>No downloads</div>
+    <div>Your data stays on your device</div>
+  </div>
+
+  <footer>© 2026 LiveramSolutions. All rights reserved.</footer>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF Mixer | Ultimate</title>
+
+<!-- Created by Mark L 2026 -->
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+body { font-family: 'Plus Jakarta Sans', sans-serif; background:#0f172a; color:#f1f5f9; }
+.glass { background:rgba(30,41,59,0.7); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.08); }
+.card:hover .remove { opacity: 1; }
+.selected { outline:3px solid #3b82f6; }
+.page-hover:hover { transform: scale(1.05); transition: transform 0.2s; }
+.file-badge { font-size: 10px; background: #3b82f6; padding: 1px 4px; border-radius: 4px; color: #fff; margin-left: 6px; }
+.progress-bar { background: #3b82f6; height: 6px; border-radius: 4px; transition: width 0.2s; }
+button { transition: transform 0.1s, filter 0.1s; }
+button:active { transform: scale(0.95); filter: brightness(0.85); }
+</style>
+</head>
+<body class="p-6">
+
+<div class="max-w-7xl mx-auto space-y-6">
+<header class="space-y-2">
+<h1 class="text-5xl font-extrabold">PDF <span class="text-blue-500">Mixer</span></h1>
+<p class="text-slate-400 text-lg">Merge, reorder, extract, and preview pages with full control.</p>
+<p class="text-sm text-slate-400">🛡️ All files are processed locally in your browser. No uploads, no servers, and your data never leaves your device.</p>
+</header>
+
+<div class="grid lg:grid-cols-12 gap-6">
+
+<!-- Controls -->
+<div class="lg:col-span-3 glass p-4 rounded-3xl space-y-4">
+<input type="file" id="input" class="hidden" multiple accept="application/pdf">
+<button onclick="document.getElementById('input').click()" class="w-full bg-blue-600 py-2 rounded-lg">Add Files</button>
+<div class="space-y-2">
+    <button onclick="quickMerge()" class="w-full bg-green-500 py-2 rounded-lg font-bold">Quick Merge All</button>
+    <button onclick="exportPDF()" id="exportBtn" class="w-full bg-white text-black py-2 rounded-lg font-bold">Export Selected</button>
+</div>
+<div class="w-full bg-slate-800 h-3 rounded mt-3 overflow-hidden">
+    <div id="progress" class="progress-bar w-0"></div>
+</div>
+
+<button onclick="resetAll()" class="w-full bg-red-500 py-2 rounded-lg font-bold mt-2">
+    Clear / Reset
+</button>
+<div class="text-xs text-slate-400 mt-2">
+• Drag to reorder files<br>• Click pages to include/exclude<br>• Hover pages to preview larger
+</div>
+</div>
+
+<!-- File list -->
+<div class="lg:col-span-3 glass p-4 rounded-3xl">
+<h2 class="text-sm mb-2">Files</h2>
+<div id="fileList" class="space-y-2"></div>
+</div>
+
+<!-- Pages -->
+<div class="lg:col-span-6 glass p-4 rounded-3xl">
+<h2 class="text-sm mb-2">Pages</h2>
+<div id="pages" class="grid grid-cols-3 gap-2 max-h-[75vh] overflow-y-auto"></div>
+</div>
+
+</div>
+</div>
+<canvas id="c" class="hidden"></canvas>
+
+<script>
+const pdfjsLib = window['pdfjs-dist/build/pdf'];
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+let files = [], currentFileIndex = 0;
+const input = document.getElementById('input');
+
+input.addEventListener('change', async e => {
+    if(!e.target.files.length) return;
+    for(const file of e.target.files){
+        const originalBuffer = await file.arrayBuffer();
+        const previewBuffer = originalBuffer.slice(0);
+        try{
+            const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(previewBuffer) }).promise;
+            files.push({ name:file.name, buffer:originalBuffer, selectedPages:[], pdf });
+        }catch(err){
+            console.error("PDF.js failed to load", err);
+            alert(`Failed to load ${file.name}.`);
+        }
+    }
+    renderFiles();
+    if(files.length) loadPages(0);
+    e.target.value = '';
+});
+
+function renderFiles(){
+    const list = document.getElementById('fileList');
+    list.innerHTML = '';
+    files.forEach((f,i)=>{
+        const div = document.createElement('div');
+        div.className = "card p-2 bg-slate-800 rounded cursor-pointer flex justify-between items-center overflow-hidden";
+        div.innerHTML = `
+<div class="flex items-center justify-between w-full">
+    <span class='truncate max-w-[65%]' title='${f.name}'>${f.name}</span>
+    <div class="flex items-center gap-2">
+        <span class='file-badge'>${f.selectedPages.length}/${f.pdf.numPages}</span>
+        <button class="remove text-red-400 hover:text-red-600 font-bold px-1">✕</button>
+    </div>
+</div>
+`;
+    const removeBtn = div.querySelector('.remove');
+
+    removeBtn.onclick = (e) => {
+        e.stopPropagation(); // stops triggering loadPages
+        const wasActive = (i === currentFileIndex);
+        files.splice(i, 1);
+        if(currentFileIndex >= files.length){
+            currentFileIndex = files.length - 1;
+        }
+        renderFiles();
+        if(!files.length){
+            document.getElementById('pages').innerHTML = '';
+            return;
+        }
+        if(wasActive){
+            loadPages(currentFileIndex);
+        }
+    };
+        div.onclick = ()=>loadPages(i);
+        list.appendChild(div);
+    });
+    new Sortable(list, { animation:150, onEnd:e=>{ const moved = files.splice(e.oldIndex,1)[0]; files.splice(e.newIndex,0,moved); }});
+}
+
+async function loadPages(index){
+    currentFileIndex = index;
+    const file = files[index];
+    const container = document.getElementById('pages');
+    container.innerHTML = '';
+    for(let i=1;i<=file.pdf.numPages;i++){
+        const page = await file.pdf.getPage(i);
+        const canvas = document.getElementById('c');
+        const ctx = canvas.getContext('2d');
+        const viewport = page.getViewport({scale:0.3});
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({canvasContext:ctx, viewport}).promise;
+        const img = document.createElement('img');
+        img.src = canvas.toDataURL();
+        img.className = "rounded cursor-pointer page-hover";
+        if(file.selectedPages.includes(i-1)) img.classList.add('selected');
+        img.onclick = ()=>{
+            const idx = file.selectedPages.indexOf(i-1);
+            if(idx>-1){ file.selectedPages.splice(idx,1); img.classList.remove('selected'); }
+            else { file.selectedPages.push(i-1); img.classList.add('selected'); }
+            renderFiles();
+        };
+        container.appendChild(img);
+    }
+    renderFiles();
+}
+
+async function quickMerge(){
+    if(!files.length) return alert("No files to merge");
+    const { PDFDocument } = PDFLib;
+    const out = await PDFDocument.create();
+    const progressEl = document.getElementById('progress');
+    setTimeout(() => {progressEl.style.width = '0%';
+}, 500);
+
+    const totalPages = files.reduce((acc,f)=>acc + f.pdf.numPages,0);
+    const minTime = 1500;
+    const delayPerPage = Math.max(0, minTime / totalPages);
+    let processed = 0;
+
+    for(let idx=0; idx<files.length; idx++){
+        const f = files[idx];
+        const src = await PDFDocument.load(f.buffer);
+        const copied = await out.copyPages(src, [...Array(src.getPageCount()).keys()]);
+        for(const p of copied){
+            out.addPage(p);
+            processed++;
+            progressEl.style.width = `${Math.round((processed/totalPages)*100)}%`;
+            await new Promise(r => setTimeout(r, delayPerPage));
+        }
+    }
+completeProgress(progressEl);
+await download(out,'merged.pdf');
+progressEl.style.width = '0%';
+}
+function completeProgress(progressEl){
+    progressEl.style.width = '100%';
+}
+function resetAll(){
+    if(!files.length) return;
+    const confirmReset = confirm("Clear all files and selections?");
+    if(!confirmReset) return;
+
+    // Reset core state
+    files = [];
+    currentFileIndex = 0;
+
+    // Clear UI
+    document.getElementById('fileList').innerHTML = '';
+    document.getElementById('pages').innerHTML = '';
+    document.getElementById('progress').style.width = '0%';
+
+    // Reset export button (in case it was stuck)
+    const exportBtn = document.getElementById('exportBtn');
+    exportBtn.innerText = "Export Selected";
+    exportBtn.disabled = false;
+}
+async function exportPDF(){
+    if(!files.length) return alert("No files to export");
+
+    const exportBtn = document.getElementById('exportBtn');
+    exportBtn.innerText = "Processing...";
+    exportBtn.disabled = true;
+
+    const { PDFDocument } = PDFLib;
+    const out = await PDFDocument.create();
+    const progressEl = document.getElementById('progress');
+
+    let totalPages = files.reduce((acc,f)=>acc + f.selectedPages.length,0);
+    if(totalPages===0){ alert("No pages selected for export!"); exportBtn.innerText="Export Selected"; exportBtn.disabled=false; return; }
+    const minTime = 1500;
+    const delayPerPage = Math.max(0, minTime / totalPages);
+    let processed = 0;
+
+    for(const f of files){
+        if(!f.selectedPages.length) continue;
+        const src = await PDFDocument.load(f.buffer);
+        const copied = await out.copyPages(src, f.selectedPages);
+        for(const p of copied){
+            out.addPage(p);
+            processed++;
+            progressEl.style.width = `${Math.round((processed/totalPages)*100)}%`;
+            await new Promise(r=>setTimeout(r, delayPerPage));
+        }
+    }
+
+completeProgress(progressEl);
+await download(out,'selected.pdf');
+
+exportBtn.innerText = "Export Selected";
+exportBtn.disabled = false;
+progressEl.style.width = '0%';
+}
+
+async function download(doc,filename){
+    const bytes = await doc.save();
+    const blob = new Blob([bytes], {type:'application/pdf'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    setTimeout(()=>a.click(),50);
+}
+</script>
+
+</body>
+</html>

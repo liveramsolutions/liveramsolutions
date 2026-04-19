@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scrabble Scorer</title>
+<!-- Created by Mark Livera 2025 - RV4 2026-->
+<style>
+body{margin:0;background:#363838;font-family:Arial,sans-serif;color:#f5e5c7;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+header{position:sticky;top:0;background:#363838;width:100%;display:flex;justify-content:center;align-items:center;gap:1rem;padding:.2rem .5rem;z-index:1000;}
+.title-container{display:flex;justify-content:center;align-items:center;min-width:0;}
+.scrabble-title{display:flex;justify-content:center;align-items:center;flex-wrap:nowrap;gap:.05em;white-space:nowrap;}
+.scrabble-title .tile{flex-shrink:0;}
+header .controls{display:flex;align-items:center;gap:.75rem;flex-shrink:0;}
+.container{display:grid;gap:.5rem;width:100%;flex:1;justify-content:center;padding:.2rem .5rem .5rem;box-sizing:border-box;}
+@media(max-width:1200px){.container{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:700px){body{overflow:auto;}.container{grid-template-columns:1fr;}}
+
+.player{background:#003366;border-radius:15px;padding:1rem;display:flex;flex-direction:column;overflow:hidden;transition:.3s;position:relative;}
+
+.name-input{margin-bottom:.5rem;padding:.3rem;border-radius:5px;border:none;text-align:center;font-size:1rem;}
+.scrabble-name{display:flex;justify-content:center;gap:.05em;flex-wrap:nowrap;overflow:hidden;}
+
+.tile{background:#f5e5c7;border:.15em solid #bea779;border-radius:.25em;display:flex;justify-content:center;align-items:center;font-weight:bold;color:#000;box-shadow:.3em .3em .6em rgba(0,0,0,.5);position:relative;width:36px;height:36px;font-size:1.2rem;animation:tilePop .25s ease;}
+.tile-value{position:absolute;bottom:.2em;right:.3em;font-size:.5rem;font-weight:bold;}
+@keyframes tilePop{0%{transform:scale(.7)}70%{transform:scale(1.1)}100%{transform:scale(1)}}
+
+.score-row,.score-input{display:flex;justify-content:center;align-items:center;gap:.5rem;margin-bottom:.5rem;}
+.score{font-size:clamp(1rem,1.5vw,1.5rem);font-weight:bold;display:flex;align-items:center;justify-content:center;gap:.3em;}
+.score-input input{width:60px;padding:.3rem;border-radius:5px;border:none;text-align:center;font-size:1rem;}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+input[type=number]{-moz-appearance:textfield;}
+.score-input button{padding:.3rem .6rem;border:none;border-radius:5px;cursor:pointer;font-weight:bold;}
+.add-btn{background:#4CAF50;color:white;}
+.remove-btn{background:#f44336;color:white;}
+.edit-name-btn{background:#ffa500;color:white;}
+
+.turns{margin-top:1rem;width:100%;border-collapse:collapse;}
+.turns th,.turns td{border-bottom:1px solid #666;padding:.2rem;text-align:center;}
+
+.rank{font-size:clamp(.9rem,1.2vw,1.2rem);font-weight:bold;color:gold;margin-right:.5em;}
+
+#statsModal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);justify-content:center;align-items:center;z-index:2000;}
+#statsBox{background:#003366;padding:2rem;border-radius:10px;text-align:center;color:white;}
+
+.turn-badge {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: #FFD700;
+    color: #003366;
+    font-weight: bold;
+    font-size: 0.8rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.5rem;
+    display: none;
+    box-shadow: 0 0 5px rgba(0,0,0,0.5);
+    z-index: 10;
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="title-container"><div class="scrabble-title"></div></div>
+<div class="controls">
+<label>Players:</label>
+<select id="numPlayersSelect">
+<option value="2">2</option>
+<option value="3">3</option>
+<option value="4" selected>4</option>
+</select>
+<div id="roundDisplay">Round 1</div>
+<button id="resetAll">Reset</button>
+<button id="exportCSV">Export</button>
+<button id="showStats">Stats</button>
+</div>
+</header>
+
+<div class="container" id="playerContainer"></div>
+
+<div id="statsModal">
+<div id="statsBox">
+<h2>Game Statistics</h2>
+<div id="statsContent"></div><br>
+<button onclick="document.getElementById('statsModal').style.display='none'">Close</button>
+</div>
+</div>
+
+<script>
+const playerContainer = document.getElementById("playerContainer");
+const numPlayersSelect = document.getElementById("numPlayersSelect");
+const STORAGE_KEY = "scrabbleScorerSave";
+const EXPIRY_HOURS = 24;
+let players=[], currentTurn=1, turnTracker=0;
+
+// -------------------- Scrabble Title --------------------
+function renderScrabbleTitle(){
+    const title = document.querySelector(".scrabble-title");
+    title.innerHTML = "";
+    const text = "SCRABBLE SCORER";
+    const values={A:1,B:3,C:3,D:2,E:1,F:4,G:2,H:4,I:1,J:8,K:5,L:1,M:3,N:1,O:1,P:3,Q:10,R:1,S:1,T:1,U:1,V:4,W:4,X:8,Y:4,Z:10};
+    const size=54;
+    [...text].forEach(l=>{
+        const t=document.createElement("div");
+        t.className="tile";
+        t.style.width=t.style.height=size+"px";
+        t.style.fontSize=size*0.5+"px";
+        if(l!==" "){ t.textContent=l;
+            if(values[l]){
+                const v = document.createElement("span");
+                v.className="tile-value";
+                v.textContent = values[l];
+                v.style.fontSize=size*0.25+"px";
+                t.appendChild(v);
+            }
+        }
+        title.appendChild(t);
+    });
+}
+
+// -------------------- Update ranks --------------------
+function updateRanks(){
+    const sorted=[...players].sort((a,b)=>b.score-a.score);
+    let rank=1;
+    for(let i=0;i<sorted.length;i++){
+        if(i>0 && sorted[i].score<sorted[i-1].score) rank=i+1;
+        sorted[i].rankDisplay.textContent = sorted[i].score>0?"#"+rank:"";
+        sorted[i].rankDisplay.style.color = ["gold","silver","#cd7f32"][rank-1]||"white";
+    }
+}
+
+// -------------------- Turn Badge --------------------
+function updateTurnBadge(){
+    players.forEach((p,i)=>{
+        const badge = p.playerEl.querySelector(".turn-badge");
+        if(!badge) return;
+        badge.style.display = (i===turnTracker && p.data.name) ? "block" : "none";
+    });
+}
+
+// -------------------- Create player --------------------
+function createPlayer(index, savedData=null){
+    const player = document.createElement("div");
+    player.className="player";
+
+    // build innerHTML at once
+    player.innerHTML=`
+        <div class="turn-badge" style="display:none;">Your Turn</div>
+        <input class="name-input" placeholder="Enter name">
+        <div class="scrabble-name"></div>
+        <div class="score-row"><div class="rank"></div><div class="score">Score: 0</div></div>
+        <div class="score-input">
+            <input type="number" class="add-score" placeholder="Score">
+            <button class="add-btn">Add</button>
+            <button class="remove-btn">Undo</button>
+            <button class="edit-name-btn">Edit Name</button>
+        </div>
+        <table class="turns">
+            <thead><tr><th>Turn</th><th>Points</th><th>Total</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    `;
+
+    const badge = player.querySelector(".turn-badge");
+    const nameInput = player.querySelector(".name-input");
+    const scrabbleName = player.querySelector(".scrabble-name");
+    const rankDisplay = player.querySelector(".rank");
+    const scoreDisplay = player.querySelector(".score");
+    const scoreInput = player.querySelector(".add-score");
+    const addBtn = player.querySelector(".add-btn");
+    const removeBtn = player.querySelector(".remove-btn");
+    const editBtn = player.querySelector(".edit-name-btn");
+    const turnsBody = player.querySelector(".turns tbody");
+
+    // -------------------- Internal state --------------------
+    let totalScore = 0, turnCount = 0, turnsArr = [];
+    const playerData = {name:"", score:0, turns:[]};
+
+    if(savedData){
+        totalScore = savedData.score || 0;
+        turnCount = savedData.turns ? savedData.turns.length : 0;
+        turnsArr = savedData.turns ? [...savedData.turns] : [];
+        playerData.name = savedData.name || "";
+        playerData.score = totalScore;
+        playerData.turns = [...turnsArr];
+    }
+
+    players.push({index, data:playerData, get score(){return totalScore;}, rankDisplay, playerEl:player});
+
+    // -------------------- Render player name --------------------
+    function renderName(){
+        scrabbleName.innerHTML="";
+        const values={A:1,B:3,C:3,D:2,E:1,F:4,G:2,H:4,I:1,J:8,K:5,L:1,M:3,N:1,O:1,P:3,Q:10,R:1,S:1,T:1,U:1,V:4,W:4,X:8,Y:4,Z:10};
+        [...nameInput.value.toUpperCase()].forEach(l=>{
+            const t=document.createElement("div");
+            t.className="tile";
+            t.textContent=l;
+            if(values[l]){
+                const v=document.createElement("span");
+                v.className="tile-value";
+                v.textContent = values[l];
+                t.appendChild(v);
+            }
+            scrabbleName.appendChild(t);
+        });
+        nameInput.style.display="none";
+        players[index].data.name = nameInput.value.trim();
+        updateTurnBadge();
+        saveGame();
+    }
+
+    // -------------------- Add / Remove score --------------------
+    function addScore(){
+        const val = parseInt(scoreInput.value);
+        if(isNaN(val)) return;
+
+        turnCount++;
+        totalScore += val;
+        turnsArr.push(val);
+        players[index].data.score = totalScore;
+        players[index].data.turns = turnsArr;
+        saveGame();
+
+        scoreDisplay.textContent="Score: "+totalScore;
+        const row=document.createElement("tr");
+        row.innerHTML=`<td>${turnCount}</td><td>${val}</td><td>${totalScore}</td>`;
+        turnsBody.appendChild(row);
+
+        turnTracker++;
+        if(turnTracker >= players.length){
+            turnTracker=0;
+            currentTurn++;
+            document.getElementById("roundDisplay").textContent="Round "+currentTurn;
+        }
+
+        updateRanks();
+        updateTurnBadge();
+
+        scoreInput.value="";
+        scoreInput.focus();
+    }
+
+    function removeScore(){
+        if(!turnsArr.length) return;
+        const last = turnsArr.pop();
+        totalScore -= last;
+        turnCount--;
+        turnsBody.removeChild(turnsBody.lastChild);
+        scoreDisplay.textContent="Score: "+totalScore;
+        players[index].data.score = totalScore;
+        players[index].data.turns = turnsArr;
+        saveGame();
+        updateRanks();
+        updateTurnBadge();
+    }
+
+    // -------------------- Event listeners --------------------
+    nameInput.addEventListener("keydown", e=>{
+        if((e.key==="Enter"||e.key==="Tab") && nameInput.value.trim()!==""){
+            e.preventDefault();
+            renderName();
+        }
+    });
+    editBtn.onclick=()=>{nameInput.style.display="block"; nameInput.focus();}
+    addBtn.onclick=addScore;
+    removeBtn.onclick=removeScore;
+
+    // Restore name tiles from saved data
+if(playerData.name && playerData.name.trim() !== ""){
+    nameInput.value = playerData.name;
+    renderName();
+} else {
+    nameInput.style.display = "block";
+}
+
+    return player;
+}
+
+/// -------------------- Render all players --------------------
+function renderPlayers(num, saved=null){
+    playerContainer.innerHTML="";
+    players=[];
+    playerContainer.style.gridTemplateColumns=`repeat(${num},1fr)`;
+
+    for(let i=0;i<num;i++){
+        const savedData = saved && saved.players ? saved.players[i] : null;
+        const pEl = createPlayer(i, savedData);
+        playerContainer.appendChild(pEl);
+
+        // rebuild table and name tiles from savedData
+        if(savedData){
+            const scrabbleName = pEl.querySelector(".scrabble-name");
+            const scoreDisplay = pEl.querySelector(".score");
+            const turnsBody = pEl.querySelector(".turns tbody");
+
+            if(savedData.name){
+                const values={A:1,B:3,C:3,D:2,E:1,F:4,G:2,H:4,I:1,J:8,K:5,L:1,M:3,N:1,O:1,P:3,Q:10,R:1,S:1,T:1,U:1,V:4,W:4,X:8,Y:4,Z:10};
+                scrabbleName.innerHTML="";
+                [...savedData.name.toUpperCase()].forEach(l=>{
+                    const t=document.createElement("div");
+                    t.className="tile";
+                    t.textContent=l;
+                    if(values[l]){
+                        const v=document.createElement("span");
+                        v.className="tile-value";
+                        v.textContent=values[l];
+                        t.appendChild(v);
+                    }
+                    scrabbleName.appendChild(t);
+                });
+            }
+
+            let total=0;
+            (savedData.turns||[]).forEach((v,t)=>{
+                total += v;
+                const row=document.createElement("tr");
+                row.innerHTML=`<td>${t+1}</td><td>${v}</td><td>${total}</td>`;
+                turnsBody.appendChild(row);
+            });
+
+            scoreDisplay.textContent="Score: "+(savedData.score||0);
+        }
+    }
+
+    document.getElementById("roundDisplay").textContent="Round "+(currentTurn||1);
+    setTimeout(()=>{
+    const firstInput = document.querySelector(".name-input");
+    if(firstInput) firstInput.focus();
+},50);
+    updateRanks();
+    updateTurnBadge();
+}
+
+// -------------------- Load / Save --------------------
+function saveGame(){
+    const data = {players:players.map(p=>p.data), round:currentTurn, turnTracker, time:Date.now(), numPlayers:players.length};
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+function loadGame(){
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return null;
+    const data = JSON.parse(raw);
+    if(!data.time) return null;
+    if(Date.now()-data.time>EXPIRY_HOURS*60*60*1000){localStorage.removeItem(STORAGE_KEY); return null;}
+
+    currentTurn = data.round||1;
+    if(data.players && data.players.length){
+        let totalTurnsDone = data.players.reduce((sum,p)=>sum+(p.turns?.length||0),0);
+        turnTracker = totalTurnsDone % data.players.length;
+    } else turnTracker=0;
+
+    return data;
+}
+
+// -------------------- Init --------------------
+const saved = loadGame();
+numPlayersSelect.disabled = !!saved;
+
+if(saved){
+    numPlayersSelect.value = saved.numPlayers || numPlayersSelect.value;
+    renderPlayers(parseInt(numPlayersSelect.value), saved);
+} else {
+    renderPlayers(parseInt(numPlayersSelect.value));
+}
+
+// -------------------- Reset / CSV / Stats --------------------
+document.getElementById("resetAll").onclick=()=>{
+    localStorage.removeItem(STORAGE_KEY);
+    numPlayersSelect.disabled=false;
+    location.reload();
+};
+document.getElementById("exportCSV").onclick = () => {
+    let csv = "Player,Turn,Points,Total\n";
+    document.querySelectorAll(".player").forEach((player, i) => {
+        const nameTiles = player.querySelectorAll(".scrabble-name .tile");
+        const name = [...nameTiles].map(t => t.firstChild.textContent).join("") || `Player ${i+1}`;
+
+        player.querySelectorAll(".turns tbody tr").forEach(r => {
+            csv += `${name},${r.children[0].textContent},${r.children[1].textContent},${r.children[2].textContent}\n`;
+        });
+    });
+
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    a.download = "scores.csv";
+    a.click();
+};
+document.getElementById("showStats").onclick = () => {
+    let highest = 0, lowest = Infinity, total = 0, turns = 0;
+    document.querySelectorAll(".turns tbody tr").forEach(r => {
+        const p = parseInt(r.children[1].textContent);
+        highest = Math.max(highest, p);
+        lowest = Math.min(lowest, p);
+        total += p;
+        turns++;
+    });
+
+    document.getElementById("statsContent").innerHTML =
+        `Total Turns: ${turns}<br>Highest Turn: ${highest}<br>Lowest Turn: ${lowest===Infinity?0:lowest}<br>Average Turn: ${turns?(total/turns).toFixed(1):0}`;
+
+    // show modal
+    const modal = document.getElementById("statsModal");
+    modal.style.display = "flex";
+};
+
+// -------------------- Keyboard --------------------
+document.addEventListener("keydown", e=>{
+    if(e.key!=="Enter" && e.key!=="Tab") return;
+    const a = document.activeElement;
+    if(a.classList.contains("name-input")){
+        e.preventDefault();
+        const n=[...document.querySelectorAll(".name-input")];
+        const next = n[n.indexOf(a)+1] || document.querySelector(".add-score");
+if(next) next.focus();
+        return;
+    }
+    if(a.classList.contains("add-score")){
+        e.preventDefault();
+        a.closest(".player").querySelector(".add-btn").click();
+        setTimeout(()=>{
+            const s=[...document.querySelectorAll(".add-score")];
+           const nextScore = s[s.indexOf(a)+1] || s[0];
+if(nextScore) nextScore.focus();
+        },50);
+    }
+});
+
+// -------------------- Player selection --------------------
+numPlayersSelect.addEventListener("change", ()=>{ renderPlayers(parseInt(numPlayersSelect.value)); });
+
+// -------------------- Render Scrabble Title --------------------
+renderScrabbleTitle();
+</script>
+</body>
+</html>

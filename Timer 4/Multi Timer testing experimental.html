@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Multi Timer</title>
+<!-- Created by Mark Livera 2026 -->
+<style>
+:root {
+  --bg-color: #2a2a2a;
+  --container-bg: #22328b;
+  --box-bg: rgba(0, 0, 0, 0.486);
+  --header-bg: rgba(0, 0, 0, 0.4);
+  --text-light: rgb(214, 214, 214);
+  --accent-yellow: rgba(236, 224, 53, 0.966);
+}
+*, *::before, *::after { box-sizing: inherit; }
+body {
+  background-color: var(--bg-color);
+  margin: 0;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+}
+
+.wrapper {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 1vw;
+  padding: 1vw;
+  height: calc(100vh - 80px); 
+  box-sizing: border-box;
+}
+
+.timer-container {
+  background-color: var(--container-bg);
+  padding: 1vw 1.2vw;
+  border-radius: 15px;
+  box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.678);
+  color: var(--text-light);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.header-box {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.8vh 1vw;
+  background: var(--header-bg);
+  border-radius: 20px;
+  margin-bottom: 0.6vh;
+  font-size: clamp(1.4rem, 2vw, 2.2rem);
+}
+.header-box input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: greenyellow;
+  font-weight: bolder;
+  font-size: inherit;
+}
+
+.timer-container .time-box {
+  display: flex;
+  justify-content: space-between;
+  background: var(--box-bg);
+  border-radius: 20px;
+  padding: 0.7vh 1vw;
+  margin-bottom: 0.35vh;
+  font-size: clamp(1rem, 1.2vw, 1.6rem);
+}
+
+.timer-container .input-container {
+  display: flex;
+  gap: 1vw;
+  margin-bottom: 0.2vh;
+}
+.timer-container .input-box {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6vw;
+  background: var(--box-bg);
+  border-radius: 20px;
+  padding: 0.9vh 1.1vw;
+  font-size: clamp(1rem, 1.2vw, 1.6rem);
+  white-space: nowrap;
+}
+.timer-container .input-box label { flex-shrink: 0; }
+.timer-container .input-box input {
+  width: 6ch;
+  text-align: center;
+  font-family: monospace;
+  font-size: inherit;
+}
+
+.timer-container .buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5vw; /* triple the previous 0.5vw */
+  margin-top: 0.2vh;
+}
+
+.timer-container .buttons button {
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem 0.5rem;
+  font-size: clamp(1rem, 1.5vw, 1.2rem);
+  white-space: nowrap;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  color: white;
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.4);
+  transition: transform 0.1s ease-in-out;
+}
+.timer-container .buttons button:active { transform: translateY(3px); }
+.start-stop { background-color: #065e1c; }
+.break-restart { background-color: #24c3c9; }
+.reset { background-color: orange; }
+.break-on { background-color: #2a8d21; }
+.break-off { background-color: #24c3c9; }
+
+.page-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.1vw;
+  padding: 0.5vw 1.1vw;
+  font-size: 1.32rem;
+  background: var(--header-bg);
+}
+.header-left,
+.header-right {
+  flex: 1;
+}
+
+.header-center {
+  display: flex;
+  gap: 1.1vw;
+  justify-content: center;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+}
+
+.header-right {
+  text-align: right;
+  font-size: 2rem; 
+  font-weight: normal;
+  padding-right: 0.5vw;
+  white-space: nowrap;
+  color: rgba(255, 255, 0, 0.822);
+}
+.page-header button {
+  width: 180px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  color: white;
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.4);
+}
+.page-header button:active {
+  transform: translateY(3px);
+}
+.page-header .start-all { background-color: #065e1c; }
+.page-header .stop-all { background-color: #DC143C; }
+.page-header .reset-all { background-color: orange; }
+
+@media (max-width: 768px) {
+  .wrapper {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    height: auto;
+  }
+  .timer-container {
+    height: auto;
+    overflow: visible;
+  }
+}
+</style>
+</head>
+<body>
+<div class="page-header">
+  <div class="header-left"></div>
+
+  <div class="header-center">
+<button class="start-all" id="startAllBtn" onclick="toggleStartAll()">Start All</button>
+<button class="reset-all" onclick="resetAllTimers()">Reset All</button>
+  </div>
+
+  <div class="header-right" id="currentTime"></div>
+</div>
+<div class="wrapper">
+  <!-- Four timers -->
+  <div class="timer-container" data-timer-id="0">
+    <div class="header-box">
+      <input type="text" placeholder="Click here to enter event and/or name..." />
+      <div class="header-time"></div>
+    </div>
+    <div class="time-box"><span class="label">Total Event Time:</span><span class="value">0:00:00</span></div>
+    <div class="time-box"><span class="label">Total Elapsed Time:</span><span class="value">0:00:00</span></div>
+    <div class="time-box"><span class="label">Current Break Time:</span><span class="value">0:00:00</span></div>
+    <div class="time-box"><span class="label">Total Break Time:</span><span class="value">0:00:00</span></div>
+    <div class="input-container">
+      <div class="input-box"><label>Event Duration (HH:MM):</label><input type="text" maxlength="5" placeholder="HH:MM" /></div>
+      <div class="input-box"><label>Break Allowance (HH:MM):</label><input type="text" maxlength="5" placeholder="HH:MM" /></div>
+    </div>
+    <div class="buttons">
+      <button class="start-stop" onclick="toggleStartStop(0)">Start</button>
+      <button class="break-restart" onclick="toggleBreakRestart(0)">Start Break</button>
+      <button class="reset" onclick="resetTimer(0)">Reset</button>
+    </div>
+  </div>
+  <div class="timer-container" data-timer-id="1">
+    <div class="header-box">
+      <input type="text" placeholder="Click here to enter event and/or name..." />
+      <div class="header-time"></div>
+    </div>
+    <div class="time-box"><span class="label">Total Event Time:</span><span class="value">0:00:00</span></div>
+    <div class="time-box"><span class="label">Total Elapsed Time:</span><span class="value">0:00:00</span></div>
+    <div class="time-box"><span class="label">Current Break Time:</span><span class="value">0:00:00</span></div>
+    <div class="time-box"><span class="label">Total Break Time:</span><span class="value">0:00:00</span></div>
+    <div class="input-container">
+      <div class="input-box"><label>Event Duration (HH:MM):</label><input type="text" maxlength="5" placeholder="HH:MM" /></div>
+      <div class="input-box"><label>Break Allowance (HH:MM):</label><input type="text" maxlength="5" placeholder="HH:MM" /></div>
+    </div>
+    <div class="buttons">
+      <button class="start-stop" onclick="toggleStartStop(1)">Start</button>
+      <button class="break-restart" onclick="toggleBreakRestart(1)">Start Break</button>
+      <button class="reset" onclick="resetTimer(1)">Reset</button>
+    </div>
+  </div>
+  <div class="timer-container" data-timer-id="2">
+    <div class="header-box">
+      <input type="text" placeholder="Click here to enter event and/or name..." />
+      <div class="header-time"></div>
+    </div>
+    <div class="time-box"><span class="label">Total Event Time:</span><span class="value">0:00:00</span></div>
+    <div class="time-box"><span class="label">Total Elapsed Time:</span><span class="value">0:00:00</span></div>
+    <div class="time-box"><span class="label">Current Break Time:</span><span class="value">0:00:00</span></div>
+    <div class="time-box"><span class="label">Total Break Time:</span><span class="value">0:00:00</span></div>
+    <div class="input-container">
+      <div class="input-box"><label>Event Duration (HH:MM):</label><input type="text" maxlength="5" placeholder="HH:MM" /></div>
+      <div class="input-box"><label>Break Allowance (HH:MM):</label><input type="text" maxlength="5" placeholder="HH:MM" /></div>
+    </div>
+    <div class="buttons">
+      <button class="start-stop" onclick="toggleStartStop(2)">Start</button>
+      <button class="break-restart" onclick="toggleBreakRestart(2)">Start Break</button>
+      <button class="reset" onclick="resetTimer(2)">Reset</button>
+    </div>
+  </div>
+  <div class="timer-container" data-timer-id="3">
+    <div class="header-box">
+      <input type="text" placeholder="Click here to enter event and/or name..." />
+      <div class="header-time"></div>
+    </div>
+    <div class="time-box"><span class="label">Total Event Time:</span><span class="value">0:00:00</span></div>
+    <div class="time-box"><span class="label">Total Elapsed Time:</span><span class="value">0:00:00</span></div>
+    <div class="time-box"><span class="label">Current Break Time:</span><span class="value">0:00:00</span></div>
+    <div class="time-box"><span class="label">Total Break Time:</span><span class="value">0:00:00</span></div>
+    <div class="input-container">
+      <div class="input-box"><label>Event Duration (HH:MM):</label><input type="text" maxlength="5" placeholder="HH:MM" /></div>
+      <div class="input-box"><label>Break Allowance (HH:MM):</label><input type="text" maxlength="5" placeholder="HH:MM" /></div>
+    </div>
+    <div class="buttons">
+      <button class="start-stop" onclick="toggleStartStop(3)">Start</button>
+      <button class="break-restart" onclick="toggleBreakRestart(3)">Start Break</button>
+      <button class="reset" onclick="resetTimer(3)">Reset</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// === Timer State ===
+const timers = [];
+for (let i = 0; i < 4; i++) {
+  timers.push({
+    id: i,
+    running: false,
+    break: false,
+    eventSeconds: 0,
+    elapsedSeconds: 0,
+    breakSeconds: 0,
+    totalBreakSeconds: 0,
+    interval: null
+  });
+}
+
+// === Utility ===
+function formatTime(sec) {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
+
+// === Update Display ===
+function updateDisplay(id) {
+  const t = timers[id];
+  const container = document.querySelector(`.timer-container[data-timer-id="${id}"]`);
+  const boxes = container.querySelectorAll('.time-box .value');
+
+  boxes[0].textContent = formatTime(t.eventSeconds);
+  boxes[1].textContent = formatTime(t.elapsedSeconds);
+  boxes[2].textContent = formatTime(t.breakSeconds);
+  boxes[3].textContent = formatTime(t.totalBreakSeconds);
+
+  const startBtn = container.querySelector('.start-stop');
+  const breakBtn = container.querySelector('.break-restart');
+
+  // Start/Stop button
+  if (t.running) {
+    startBtn.textContent = 'Stop';
+    startBtn.style.backgroundColor = '#DC143C';
+  } else {
+    startBtn.textContent = 'Start';
+    startBtn.style.backgroundColor = '#065e1c';
+  }
+
+  // Break button
+if (t.break) {
+  breakBtn.textContent = 'Resume Timer';
+  breakBtn.classList.add('break-on');
+  breakBtn.classList.remove('break-off');
+} else {
+  breakBtn.textContent = 'Start Break';
+  breakBtn.classList.add('break-off');
+  breakBtn.classList.remove('break-on');
+}
+}
+
+// === Format Time Input ===
+function formatTimeInput(input) {
+  const format = () => {
+    let value = input.value.replace(/\D/g, "").slice(0, 4);
+    if (!value) { input.value = ""; return; }
+    let num = parseInt(value, 10);
+
+    // 1–2 digits = minutes
+    if (value.length <= 2) {
+      let hours = Math.floor(num / 60);
+      let minutes = num % 60;
+      input.value = `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+      return;
+    }
+
+    // Otherwise HHMM logic
+    value = value.padStart(4, "0");
+    let hours = parseInt(value.slice(0, 2), 10);
+    let minutes = parseInt(value.slice(2, 4), 10);
+
+    if (minutes >= 60) {
+      let totalMinutes = parseInt(value, 10);
+      hours = Math.floor(totalMinutes / 60);
+      minutes = totalMinutes % 60;
+    }
+
+    input.value = `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+  };
+
+  // Blur
+  input.addEventListener("blur", format);
+
+  // Enter moves to next input
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      format();
+      const inputs = Array.from(document.querySelectorAll('.input-box input'));
+      const index = inputs.indexOf(input);
+      if (index > -1 && index < inputs.length - 1) inputs[index + 1].focus();
+    }
+  });
+
+  // Paste
+  input.addEventListener("paste", e => {
+    e.preventDefault();
+    let pasted = (e.clipboardData || window.clipboardData).getData("text").replace(/\D/g, "").slice(0, 4);
+    input.value = pasted;
+    format();
+  });
+}
+
+// === Update Header Clock ===
+function updateCurrentTime() {
+  const now = new Date();
+  let hours = now.getHours();
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12;
+  document.getElementById("currentTime").textContent = `${hours}:${minutes} ${ampm}`;
+}
+updateCurrentTime();
+setInterval(updateCurrentTime, 1000);
+
+// === Individual Timer Functions ===
+function toggleStartStop(id) {
+  const t = timers[id];
+  if (t.running) {
+    clearInterval(t.interval);
+    t.running = false;
+  } else {
+    t.running = true;
+    t.interval = setInterval(() => {
+      t.eventSeconds++;
+      t.elapsedSeconds++;
+      if (t.break) t.breakSeconds++;
+      updateDisplay(id);
+    }, 1000);
+  }
+  updateDisplay(id);
+  updateStartAllButton(); // Update header Start All/Stop All
+}
+
+function toggleBreakRestart(id) {
+  const t = timers[id];
+  if (t.break) {
+    t.break = false;
+    t.breakSeconds = 0;
+  } else {
+    t.break = true;
+    t.breakSeconds = 0;
+  }
+  updateDisplay(id);
+}
+
+function resetTimer(id) {
+  const t = timers[id];
+  clearInterval(t.interval);
+  t.running = false;
+  t.break = false;
+  t.eventSeconds = 0;
+  t.elapsedSeconds = 0;
+  t.breakSeconds = 0;
+  t.totalBreakSeconds = 0;
+
+  const container = document.querySelector(`.timer-container[data-timer-id="${id}"]`);
+  container.querySelectorAll('.input-box input').forEach(input => input.value = '');
+  const eventInput = container.querySelector('.header-box input');
+  if (eventInput) eventInput.value = '';
+
+  updateDisplay(id);
+  updateStartAllButton();
+}
+
+// === Start All / Stop All Header Button ===
+function updateStartAllButton() {
+  const anyRunning = timers.some(t => t.running);
+  const btn = document.getElementById("startAllBtn");
+
+  btn.textContent = anyRunning ? 'Stop All' : 'Start All';
+  btn.classList.toggle('stop-all', anyRunning);
+  btn.classList.toggle('start-all', !anyRunning);
+}
+
+function toggleStartAll() {
+  const anyRunning = timers.some(t => t.running);
+  if (anyRunning) {
+    timers.forEach((t, i) => { if (t.running) toggleStartStop(i); });
+  } else {
+    timers.forEach((t, i) => { if (!t.running) toggleStartStop(i); });
+  }
+  updateStartAllButton();
+}
+
+// === Reset All Timers ===
+function resetAllTimers() {
+  timers.forEach((t, i) => resetTimer(i));
+}
+
+// === Initialize Inputs ===
+document.querySelectorAll('.input-box input').forEach(input => formatTimeInput(input));
+
+// === Sync Start All Button on Load ===
+window.addEventListener("load", updateStartAllButton);
+</script>
+</body>
+</html>

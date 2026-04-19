@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Golf Scorer</title>
+
+<!-- Created by Mark L -->
+
+<style>
+:root {
+  --bg-color: #2a2a2a;
+  --container-bg: #22328b;
+  --box-bg: rgba(0, 0, 0, 0.486);
+  --header-bg: rgba(0, 0, 0, 0.4);
+  --text-light: rgb(214, 214, 214);
+  --accent-yellow: rgba(236, 224, 53, 0.966);
+}
+
+* { box-sizing: border-box; }
+body { margin:0; font-family:Arial; background:var(--bg-color); color:var(--text-light);} 
+.container { max-width:600px; margin:auto; padding:10px; }
+h1 { text-align:center; color:var(--accent-yellow);} 
+
+.top-box, .total-box { background:var(--container-bg); border-radius:15px; padding:10px; margin-top:8px; }
+
+input { width:100%; padding:8px; margin:5px 0; border:none; border-radius:10px; background:var(--box-bg); color:white; }
+
+.round-buttons { display:flex; gap:6px; margin-top:6px; }
+.round-buttons button { flex:1; padding:8px; border:none; border-radius:10px; background:var(--box-bg); color:white; font-weight:bold; }
+.round-buttons button.active { background:var(--accent-yellow); color:black; }
+
+.table { margin-top:10px; }
+.row { display:grid; grid-template-columns:40px 60px 110px 55px 65px 70px; gap:8px; align-items:center; margin-bottom:5px; background:var(--box-bg); padding:6px; border-radius:10px; }
+.header { background:var(--header-bg); font-weight:bold; }
+.cell { text-align:center; }
+.output { font-weight:bold; }
+
+.pos { color:#ff6b6b; }
+.neg { color:#6bff95; }
+
+.stepper { display:flex; align-items:center; justify-content:center; gap:6px; }
+.stepper button {
+  width:40px; height:40px; border:none; border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:24px; font-weight:bold; padding:0;
+}
+.minus { background:orange; }
+.plus { background:#065e1c; }
+
+.par-select {
+  background:var(--box-bg);
+  border-radius:8px;
+  padding:8px;
+  text-align:center;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+button.main { width:100%; padding:10px; margin-top:8px; border:none; border-radius:10px; font-weight:bold; color:white; }
+.save { background:#065e1c; }
+.email { background:#24c3c9; }
+
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Golf Scorer</h1>
+
+<div class="top-box">
+<input id="courseName" placeholder="Course Name">
+
+<div style="margin-top:5px; font-weight:bold;">Round</div>
+<div class="round-buttons">
+  <button onclick="setMode('18')" id="btn18" class="active">18</button>
+  <button onclick="setMode('front9')" id="btnFront">Front 9</button>
+  <button onclick="setMode('back9')" id="btnBack">Back 9</button>
+</div>
+</div>
+
+<div id="table" class="table"></div>
+
+<div class="total-box">
+<div>Total Strokes: <span id="totalStrokes">0</span></div>
+<div>Total +/-: <span id="totalPar">0</span></div>
+</div>
+
+<button class="main save" onclick="saveRound()">Save Round</button>
+<button class="main email" onclick="emailRound()">Email Round</button>
+
+</div>
+
+<script>
+let currentMode='18';
+
+function setMode(mode){
+ currentMode=mode;
+ document.querySelectorAll('.round-buttons button').forEach(b=>b.classList.remove('active'));
+ document.getElementById(mode==='18'?'btn18':mode==='front9'?'btnFront':'btnBack').classList.add('active');
+ generateTable();
+}
+
+function generateTable(){
+ const table=document.getElementById('table');
+ table.innerHTML='';
+
+ let start=1,count=18;
+ if(currentMode==='front9'){count=9;start=1}
+ if(currentMode==='back9'){count=9;start=10}
+
+ const header=document.createElement('div');
+ header.className='row header';
+ header.innerHTML='<div>Hole</div><div>Par</div><div>Shots</div><div>+/-</div><div>Run</div><div>Run +/-</div>';
+ table.appendChild(header);
+
+ for(let i=0;i<count;i++){
+  const hole=start+i;
+  const row=document.createElement('div');
+  row.className='row';
+
+  row.innerHTML=`
+  <div class="cell">${hole}</div>
+  <div class="par-select" data-value="0" onclick="cyclePar(this)">-</div>
+  <div class="stepper">
+    <button class="minus" onclick="step(this,-1)">-</button>
+    <span data-type="shots">0</span>
+    <button class="plus" onclick="step(this,1)">+</button>
+  </div>
+  <div class="cell output" data-type="diff"></div>
+  <div class="cell output" data-type="run"></div>
+  <div class="cell output" data-type="runpar"></div>`;
+
+  table.appendChild(row);
+ }
+}
+
+function cyclePar(el){
+ const vals=[3,4,5];
+ let current=parseInt(el.dataset.value)||0;
+ let idx=vals.indexOf(current);
+ idx=(idx+1)%vals.length;
+ const val=vals[idx];
+ el.dataset.value=val;
+ el.textContent=val;
+ update();
+}
+
+function step(btn,change){
+ const span=btn.parentElement.querySelector('[data-type="shots"]');
+ let val=parseInt(span.textContent)||0;
+ val=Math.max(0,val+change);
+ span.textContent=val;
+ update();
+}
+
+function update(){
+ const rows=document.querySelectorAll('.row:not(.header)');
+ let totalShots=0,totalPar=0,runShots=0,runPar=0;
+ let last=-1;
+
+ rows.forEach((r,i)=>{
+  const s=parseInt(r.querySelector('[data-type="shots"]').textContent);
+  if(s>0) last=i;
+ });
+
+ rows.forEach((r,i)=>{
+  const par=parseInt(r.querySelector('.par-select').dataset.value)||0;
+  const shots=parseInt(r.querySelector('[data-type="shots"]').textContent)||0;
+  const diff=shots-par;
+
+  if(i<=last && shots>0){
+    runShots+=shots;
+    runPar+=diff;
+    totalShots+=shots;
+    totalPar+=diff;
+
+    const d=r.querySelector('[data-type="diff"]');
+    d.textContent=diff>0?`+${diff}`:diff;
+    d.className='cell output '+(diff>0?'pos':diff<0?'neg':'');
+
+    r.querySelector('[data-type="run"]').textContent=runShots;
+
+    const rp=r.querySelector('[data-type="runpar"]');
+    rp.textContent=runPar>0?`+${runPar}`:runPar;
+    rp.className='cell output '+(runPar>0?'pos':runPar<0?'neg':'');
+
+  } else {
+    r.querySelectorAll('[data-type="diff"],[data-type="run"],[data-type="runpar"]').forEach(el=>el.textContent='');
+  }
+ });
+
+ document.getElementById('totalStrokes').textContent=totalShots;
+ document.getElementById('totalPar').textContent=totalPar>0?`+${totalPar}`:totalPar;
+}
+
+function saveRound(){
+ const data=collectData();
+ let history=JSON.parse(localStorage.getItem('golfHistory')||'[]');
+ history.push(data);
+ localStorage.setItem('golfHistory',JSON.stringify(history));
+ alert('Saved. Total rounds: '+history.length);
+}
+
+function collectData(){
+ const rows=document.querySelectorAll('.row:not(.header)');
+ const holes=[];
+ rows.forEach((r,i)=>{
+  holes.push({
+    hole:i+1,
+    par:r.querySelector('.par-select').dataset.value,
+    shots:r.querySelector('[data-type="shots"]').textContent
+  });
+ });
+ return {
+  course:document.getElementById('courseName').value,
+  date:new Date().toLocaleString(),
+  holes,
+  totalShots:document.getElementById('totalStrokes').textContent,
+  totalPar:document.getElementById('totalPar').textContent
+ };
+}
+
+function emailRound(){
+ const d=collectData();
+ let body=`${d.course}\n${d.date}\n\n`;
+ d.holes.forEach(h=>body+=`Hole ${h.hole}: ${h.shots} (${h.par})\n`);
+ body+=`\nTotal: ${d.totalShots} (${d.totalPar})`;
+ location.href=`mailto:?subject=Golf Round&body=${encodeURIComponent(body)}`;
+}
+
+generateTable();
+</script>
+</body>
+</html>

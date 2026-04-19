@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+    <title>Oh Hell! Scorer</title>
+    <style>
+        :root { --card-width: 70px; --card-height: 100px; --primary-gold: #ffd700; }
+        body { font-family: 'Segoe UI', sans-serif; background: #1b5e20; color: white; padding: 20px; text-align: center; font-size: 1.3rem; }
+        h1 { margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); font-size: 2.8rem; }
+        
+        /* Obvious Setup Area */
+        .setup-container { 
+            background: #0d3b11; 
+            padding: 25px; 
+            border: 3px solid var(--primary-gold); 
+            border-radius: 15px; 
+            margin-bottom: 30px; 
+            display: inline-block;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        }
+        .setup-label { font-weight: bold; color: var(--primary-gold); text-transform: uppercase; letter-spacing: 1px; margin-right: 10px; }
+        
+        .setup-controls { display: flex; gap: 30px; align-items: center; justify-content: center; flex-wrap: wrap; }
+        
+        /* Highlighting the Number Input */
+        input#playerCount { 
+            font-size: 2rem; 
+            padding: 10px; 
+            width: 80px; 
+            border: 4px solid var(--primary-gold); 
+            border-radius: 10px; 
+            text-align: center; 
+            background: white; 
+            color: #1b5e20;
+            font-weight: 900;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+        
+        select#roundOrder { font-size: 1.3rem; padding: 10px; border-radius: 8px; border: 2px solid white; cursor: pointer; }
+
+        table { width: 100%; border-collapse: collapse; background: #fafafa; color: #333; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; font-size: 1.4rem; }
+        th { background: #e0e0e0; min-width: 120px; }
+        
+        input[type="number"] { width: 65px; padding: 8px; text-align: center; border: 1px solid #ccc; border-radius: 5px; font-size: 1.4rem; font-weight: bold; }
+        .name-input { width: 120px; font-weight: bold; border: 2px solid transparent; background: transparent; text-align: center; font-size: 1.6rem; color: #333; }
+        .name-input:focus { border: 2px solid #2196F3; background: white; outline: none; }
+        
+        .leader { background: var(--primary-gold) !important; color: #000; }
+        .total-display { font-size: 1.8rem; font-weight: 900; margin-top: 8px; color: #1b5e20; }
+        
+        .card { 
+            width: var(--card-width); height: var(--card-height); 
+            background: #fff; border-radius: 8px; cursor: pointer; 
+            display: inline-flex; align-items: center; justify-content: center; 
+            font-size: 4rem; border: 3px solid #000; color: #000; 
+            margin: 0 auto; line-height: 1; padding: 0; overflow: hidden;
+        }
+        .card.back { 
+            background: #c62828; 
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px); 
+        }
+        
+        .suit-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 25px; border: 5px solid #333; z-index: 100; border-radius: 15px; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        .suit-option { font-size: 6rem; padding: 15px; cursor: pointer; display: inline-block; transition: transform 0.1s; }
+        
+        .red { color: #d32f2f; }
+        .black { color: #000; }
+        .total-col { background: #eee; font-weight: 900; font-size: 1.6rem; }
+        
+        .btn { padding: 15px 30px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; font-size: 1.3rem; transition: background 0.2s; }
+        .btn-new { background: #2196F3; border-bottom: 4px solid #0b7dda; }
+        .btn-new:active { border-bottom: none; transform: translateY(4px); }
+        .btn-reset { background: #f44336; }
+    </style>
+</head>
+<body>
+
+<h1>Oh Hell! Up and Down the river we go!</h1>
+
+<div class="setup-container">
+    <div class="setup-controls">
+        <div>
+            <span class="setup-label">1. Set Players:</span>
+            <input type="number" id="playerCount" value="4" min="3" max="10">
+        </div>
+        <div>
+            <span class="setup-label">2. Pick Order:</span>
+            <select id="roundOrder">
+                <option value="desc">High First (10 → 1 → 10)</option>
+                <option value="asc">Low First (1 → 10 → 1)</option>
+            </select>
+        </div>
+        <button class="btn btn-new" onclick="confirmNewGame()">START GAME</button>
+    </div>
+</div>
+
+<div>
+    <button class="btn btn-reset" style="padding: 8px 16px; font-size: 1rem; margin-bottom: 10px;" onclick="clearData()">RESET BOARD</button>
+</div>
+
+<table id="scoreTable">
+    <thead id="tableHead"></thead>
+    <tbody id="tableBody"></tbody>
+</table>
+
+<div id="suitPopup" class="suit-popup">
+    <span class="suit-option black" onclick="selectSuit('♠')">♠</span>
+    <span class="suit-option red" onclick="selectSuit('♥')">♥</span>
+    <span class="suit-option red" onclick="selectSuit('♦')">♦</span>
+    <span class="suit-option black" onclick="selectSuit('♣')">♣</span>
+</div>
+
+<script>
+    let currentSuitTarget = null;
+
+    window.onload = () => {
+        const saved = localStorage.getItem('ohHellGame');
+        if (saved) render(JSON.parse(saved));
+        else initGame();
+    };
+
+    function confirmNewGame() {
+        if (confirm("Start a new game with these settings?")) initGame();
+    }
+
+    function clearData() {
+        if (confirm("Completely wipe board memory?")) {
+            localStorage.clear();
+            location.reload();
+        }
+    }
+
+    function initGame() {
+        const count = parseInt(document.getElementById('playerCount').value);
+        const order = document.getElementById('roundOrder').value;
+        const maxHands = Math.min(10, Math.floor(52 / count));
+        
+        let handSeq = [];
+        if (order === 'desc') {
+            for (let i = maxHands; i >= 1; i--) handSeq.push(i);
+            for (let i = 2; i <= maxHands; i++) handSeq.push(i);
+        } else {
+            for (let i = 1; i <= maxHands; i++) handSeq.push(i);
+            for (let i = maxHands - 1; i >= 1; i--) handSeq.push(i);
+        }
+
+        const state = {
+            count,
+            names: Array.from({length: count}, (_, i) => `Player ${i+1}`),
+            rounds: handSeq.map(h => ({
+                handSize: h,
+                trump: '',
+                data: Array.from({length: count}, () => ({ bid: '', won: '' }))
+            }))
+        };
+        localStorage.setItem('ohHellGame', JSON.stringify(state));
+        render(state);
+    }
+
+    function render(state) {
+        let headHtml = `<tr><th>Cards</th><th>Trump</th>`;
+        state.names.forEach((name, i) => {
+            headHtml += `<th id="header-${i}">
+                <input type="text" class="name-input" value="${name}" oninput="updateName(${i}, this.value)">
+                <div id="total-${i}" class="total-display">0</div>
+            </th>`;
+        });
+        headHtml += `<th class="total-col">Hand Total</th></tr>`;
+        document.getElementById('tableHead').innerHTML = headHtml;
+
+        let bodyHtml = "";
+        state.rounds.forEach((round, rIdx) => {
+            let rowBidSum = 0;
+            let rowHtml = `<tr><td style="font-weight: bold; font-size: 2rem;">${round.handSize}</td><td><div class="card ${round.trump ? '' : 'back'}" onclick="openSuitPicker(this, ${rIdx})">${round.trump}</div></td>`;
+            
+            state.names.forEach((_, pIdx) => {
+                const d = round.data[pIdx];
+                rowBidSum += (parseInt(d.bid) || 0);
+                rowHtml += `<td>
+                    T: <input type="number" value="${d.bid}" onchange="handleBid(${rIdx}, ${pIdx}, this)"><br><br>
+                    W: <input type="number" value="${d.won}" onchange="handleWon(${rIdx}, ${pIdx}, this)">
+                </td>`;
+            });
+            rowHtml += `<td id="bid-sum-${rIdx}" class="total-col">${rowBidSum}</td></tr>`;
+            bodyHtml += rowHtml;
+        });
+        document.getElementById('tableBody').innerHTML = bodyHtml;
+        calcScores();
+    }
+
+    function updateName(pIdx, val) {
+        let state = JSON.parse(localStorage.getItem('ohHellGame'));
+        state.names[pIdx] = val;
+        localStorage.setItem('ohHellGame', JSON.stringify(state));
+    }
+
+    function handleBid(rIdx, pIdx, input) {
+        let state = JSON.parse(localStorage.getItem('ohHellGame'));
+        const val = parseInt(input.value);
+        const handSize = state.rounds[rIdx].handSize;
+
+        const others = state.rounds[rIdx].data.reduce((s, d, i) => i === pIdx ? s : s + (parseInt(d.bid) || 0), 0);
+        const filled = state.rounds[rIdx].data.filter((d, i) => i !== pIdx && d.bid !== '').length;
+
+        if (filled === state.count - 1 && (others + val) === handSize) {
+            alert(`THE HOOK! Total tricks nominated cannot equal ${handSize}.`);
+            input.value = '';
+            state.rounds[rIdx].data[pIdx].bid = '';
+        } else {
+            state.rounds[rIdx].data[pIdx].bid = input.value;
+            document.getElementById(`bid-sum-${rIdx}`).innerText = others + (val || 0);
+        }
+        
+        localStorage.setItem('ohHellGame', JSON.stringify(state));
+        calcScores();
+    }
+
+    function handleWon(rIdx, pIdx, input) {
+        let state = JSON.parse(localStorage.getItem('ohHellGame'));
+        state.rounds[rIdx].data[pIdx].won = input.value;
+        localStorage.setItem('ohHellGame', JSON.stringify(state));
+        calcScores();
+    }
+
+    function openSuitPicker(el, rIdx) {
+        currentSuitTarget = { el, rIdx };
+        document.getElementById('suitPopup').style.display = 'block';
+    }
+
+    function selectSuit(suit) {
+        let state = JSON.parse(localStorage.getItem('ohHellGame'));
+        state.rounds[currentSuitTarget.rIdx].trump = suit;
+        localStorage.setItem('ohHellGame', JSON.stringify(state));
+        
+        currentSuitTarget.el.innerText = suit;
+        currentSuitTarget.el.classList.remove('back');
+        currentSuitTarget.el.classList.toggle('red', suit === '♥' || suit === '♦');
+        currentSuitTarget.el.classList.toggle('black', suit === '♠' || suit === '♣');
+        
+        document.getElementById('suitPopup').style.display = 'none';
+    }
+
+    function calcScores() {
+        const state = JSON.parse(localStorage.getItem('ohHellGame'));
+        if (!state) return;
+        const totals = new Array(state.count).fill(0);
+
+        state.rounds.forEach(r => {
+            r.data.forEach((d, pIdx) => {
+                const b = parseInt(d.bid);
+                const w = parseInt(d.won);
+                if (!isNaN(b) && !isNaN(w)) {
+                    totals[pIdx] += (b === w) ? (10 + w) : w;
+                }
+            });
+        });
+
+        const max = Math.max(...totals);
+        totals.forEach((t, i) => {
+            const display = document.getElementById(`total-${i}`);
+            if (display) {
+                display.innerText = t;
+                document.getElementById(`header-${i}`).classList.toggle('leader', t === max && t > 0);
+            }
+        });
+    }
+</script>
+</body>
+</html>

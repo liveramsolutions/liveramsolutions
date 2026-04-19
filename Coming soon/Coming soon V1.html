@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coming Soon</title>
+
+<!-- Created by Mark L -->
+
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  body {
+    height: 100vh;
+    background: radial-gradient(circle at 20% 20%, #0f172a, #020617);
+    color: #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* Tech grid background */
+  body::before {
+    content: "";
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background-image: linear-gradient(rgba(56,189,248,0.08) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(56,189,248,0.08) 1px, transparent 1px);
+    background-size: 40px 40px;
+    transform: rotate(15deg);
+    animation: moveGrid 20s linear infinite;
+  }
+
+  @keyframes moveGrid {
+    0% { transform: translate(0,0) rotate(15deg); }
+    100% { transform: translate(-40px,-40px) rotate(15deg); }
+  }
+
+  .container {
+    position: relative;
+    text-align: center;
+    padding: 50px;
+    max-width: 650px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(56,189,248,0.2);
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 40px rgba(56,189,248,0.1);
+  }
+
+  h1 {
+    font-size: 3.2rem;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    color: #38bdf8;
+  }
+
+  .signature {
+    font-size: 0.85rem;
+    margin-bottom: 30px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, #d4af37, #ffd700, #f5d76e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 8px rgba(212,175,55,0.4);
+  }
+
+  p {
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+    color: #94a3b8;
+  }
+
+  .loader {
+    width: 70px;
+    height: 70px;
+    border: 6px solid rgba(56,189,248,0.15);
+    border-top: 6px solid #38bdf8;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 30px;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* Circuit-style accent lines */
+  .tech-lines {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .tech-lines span {
+    position: absolute;
+    background: #38bdf8;
+    opacity: 0.2;
+  }
+
+  .tech-lines span:nth-child(1) {
+    top: 20%; left: 10%; width: 120px; height: 2px;
+  }
+
+  .tech-lines span:nth-child(2) {
+    top: 20%; left: 10%; width: 2px; height: 80px;
+  }
+
+  .tech-lines span:nth-child(3) {
+    bottom: 25%; right: 15%; width: 140px; height: 2px;
+  }
+
+  .tech-lines span:nth-child(4) {
+    bottom: 25%; right: 15%; width: 2px; height: 90px;
+  }
+
+  footer {
+    margin-top: 40px;
+    font-size: 0.8rem;
+    color: #475569;
+  }
+</style>
+</head>
+
+<body>
+  <div class="container">
+
+    <div class="tech-lines">
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+
+    <h1>Coming Soon</h1>
+    <div class="signature">LiveramSolutions</div>
+
+    <div class="loader"></div>
+
+    <p>Building something smarter, faster, and better.</p>
+
+    <footer>
+      © 2026 LiveramSolutions. All rights reserved.
+    </footer>
+  </div>
+</body>
+</html>
