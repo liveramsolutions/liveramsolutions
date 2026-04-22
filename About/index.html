@@ -33,7 +33,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  z-index: 1000;
+  z-index: 9999;
 }
 
 .header h2 {
@@ -45,7 +45,8 @@ body {
   border-radius: 25px;
   background: #004aad;
   color: #ffd700;
-  text-decoration: none;
+  border: none;
+  cursor: pointer;
   font-weight: bold;
   transition: 0.3s;
 }
@@ -116,7 +117,7 @@ p {
 
 <div class="header">
   <h2>LiveramSolutions</h2>
-  <a href="/" class="back-btn">← Back</a>
+  <button class="back-btn" onclick="window.location.href='/'">← Back</button>
 </div>
 
 <div class="hero">
