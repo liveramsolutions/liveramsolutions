@@ -167,19 +167,62 @@
         .calc5 { background-color: #87cefa; }
         .calc6 { background-color: #f39c12; }  
 
-        @media (max-width: 768px) {
-            .container,
-            .bottom-row {
-                grid-template-columns: 1fr; /* Stack calculators vertically on smaller screens */
-            }
-        }
+@media (max-width: 768px) {
+    /* New comprehensive mobile styles here */
+    .container,
+    .bottom-row {
+        grid-template-columns: 1fr;
+        grid-gap: 20px;
+    }
+    
+    .calculator {
+        width: 100%;
+        height: auto;
+        padding: 15px;
+    }
+    
+    .form-group {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .form-group label {
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 8px;
+        font-size: 1em;
+    }
+    
+    .form-group input {
+        width: 100%;
+        max-width: 100%;
+        font-size: 1.1em;
+    }
+    
+    .form-group .currency-symbol,
+    .form-group .percentage-symbol {
+        position: static;
+        transform: none;
+        margin-right: 10px;
+        margin-bottom: 8px;
+    }
+    
+    .calculator h2 {
+        font-size: 1.1em;
+    }
+    
+    .banner-text {
+        font-size: 18px;
+    }
+}
 
-        @media (max-width: 480px) {
-            .calculator {
-                width: 100%;
-                height: auto;
-            }
-        }
+@media (max-width: 480px) {
+    /* Keep this — it provides extra tweaks for very small screens */
+    .calculator {
+        width: 100%;
+        height: auto;
+    }
+}
     </style>
 </head>
 <body>
