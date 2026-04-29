@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cubic Weight Calculator</title>
+    <!-- Created by Mark Livera 2026 -->
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --primary-blue: #4a90e2;
+            --accent-gold: #ffd700;
+            --highlight-purple: #9b51e0;
+            --text-white: #f5f5f5;
+            --border-color: #3d3d3d;
+            --danger-red: #ff4d4d;
+            --success-green: #2ecc71;
+        }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-white);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 15px;
+            font-size: 1.1rem;
+        }
+
+        .calculator-card {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 500px;
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            border: 1px solid var(--border-color);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: var(--primary-blue);
+            text-align: center;
+            font-weight: 800;
+            font-size: 1.8rem;
+            border-bottom: 3px solid var(--accent-gold);
+            padding-bottom: 12px;
+            text-transform: uppercase;
+        }
+
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-size: 0.95rem; color: #ccc; }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            background: #1a1a1a;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: white;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 12px rgba(74, 144, 226, 0.3);
+        }
+
+        .results-container {
+            margin-top: 25px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .result-box {
+            background: #252525;
+            padding: 15px;
+            border-radius: 14px;
+            border-left: 5px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .result-box.active {
+            border-left-color: var(--accent-gold);
+            background: #353535;
+            transform: translateY(-2px);
+        }
+
+        .result-label { font-size: 0.75rem; color: #888; text-transform: uppercase; font-weight: 700; }
+        .result-value { display: block; font-size: 1.3rem; font-weight: bold; color: var(--highlight-purple); margin-top: 5px; }
+
+        .comparison {
+            grid-column: span 2;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 700;
+            padding: 15px;
+            background: rgba(255, 215, 0, 0.05);
+            border-radius: 12px;
+            color: var(--primary-blue);
+            border: 1px solid var(--accent-gold);
+            margin-top: 10px;
+        }
+
+        /* Button Layout and Floating Style */
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 50px; /* Smooth Pill Shape */
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-4px); /* Floating effect */
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .btn-clear { background: var(--danger-red); }
+        .btn-copy { background: var(--success-green); }
+
+        @media (max-width: 480px) {
+            .results-container { grid-template-columns: 1fr; }
+            .comparison { grid-column: span 1; }
+            .actions { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="calculator-card">
+        <h2>Cubic Weight</h2>
+        
+        <div class="input-group">
+            <label>Length (cm)</label>
+            <input type="number" id="L" placeholder="0" class="calc-input" inputmode="decimal">
+        </div>
+        <div class="input-group">
+            <label>Width (cm)</label>
+            <input type="number" id="W" placeholder="0" class="calc-input" inputmode="decimal">
+        </div>
+        <div class="input-group">
+            <label>Height (cm)</label>
+            <input type="number" id="H" placeholder="0" class="calc-input" inputmode="decimal">
+        </div>
+        <div class="input-group">
+            <label>Actual Weight (kg)</label>
+            <input type="number" id="actual" placeholder="0" class="calc-input" inputmode="decimal">
+        </div>
+
+        <div class="results-container">
+            <div class="result-box" onclick="setActive(this, 167, 'Air')">
+                <span class="result-label">Air (167)</span>
+                <span id="air" class="result-value">-</span>
+            </div>
+            <div class="result-box active" id="default-box" onclick="setActive(this, 250, 'Road Exp')">
+                <span class="result-label">Road Exp (250)</span>
+                <span id="express" class="result-value">-</span>
+            </div>
+            <div class="result-box" onclick="setActive(this, 333, 'Road Gen')">
+                <span class="result-label">Road Gen (333)</span>
+                <span id="general" class="result-value">-</span>
+            </div>
+            <div class="result-box" onclick="setActive(this, 1000, 'LCL Sea')">
+                <span class="result-label">LCL Sea (1000)</span>
+                <span id="sea" class="result-value">-</span>
+            </div>
+            <div id="compare-text" class="comparison">Select a mode & enter data</div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-clear" onclick="clearAll()">Clear All</button>
+            <button class="btn btn-copy" onclick="copyResults()">Copy Results</button>
+        </div>
+    </div>
+
+    <script>
+        const inputs = document.querySelectorAll('.calc-input');
+        let currentFactor = 250;
+        let currentLabel = 'Road Exp';
+
+        inputs.forEach((input, index) => {
+            input.addEventListener('input', calculate);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const nextInput = inputs[index + 1];
+                    if (nextInput) nextInput.focus();
+                    else { calculate(); input.blur(); }
+                }
+            });
+        });
+
+        function setActive(element, factor, label) {
+            document.querySelectorAll('.result-box').forEach(box => box.classList.remove('active'));
+            element.classList.add('active');
+            currentFactor = factor;
+            currentLabel = label;
+            calculate();
+        }
+
+        function calculate() {
+            const L = parseFloat(document.getElementById('L').value) || 0;
+            const W = parseFloat(document.getElementById('W').value) || 0;
+            const H = parseFloat(document.getElementById('H').value) || 0;
+            const actual = parseFloat(document.getElementById('actual').value) || 0;
+
+            if (L > 0 && W > 0 && H > 0) {
+                const m3 = (L/100) * (W/100) * (H/100);
+                
+                document.getElementById('air').innerText = (m3 * 167).toFixed(2) + " kg";
+                document.getElementById('express').innerText = (m3 * 250).toFixed(2) + " kg";
+                document.getElementById('general').innerText = (m3 * 333).toFixed(2) + " kg";
+                document.getElementById('sea').innerText = (m3 * 1000).toFixed(2) + " kg";
+
+                const cubicForMode = m3 * currentFactor;
+                const higher = Math.max(actual, cubicForMode);
+                document.getElementById('compare-text').innerText = 
+                    `Chargeable (${currentLabel}): ${higher.toFixed(2)} kg`;
+            } else {
+                resetResults();
+            }
+        }
+
+        function resetResults() {
+            ['air', 'express', 'general', 'sea'].forEach(id => document.getElementById(id).innerText = "-");
+            document.getElementById('compare-text').innerText = "Select a mode & enter data";
+        }
+
+        function clearAll() {
+            inputs.forEach(input => input.value = '');
+            resetResults();
+            document.getElementById('L').focus();
+        }
+
+        function copyResults() {
+            const display = document.getElementById('compare-text').innerText;
+            if (display.includes(':')) {
+                navigator.clipboard.writeText(display).then(() => {
+                    const btn = document.querySelector('.btn-copy');
+                    const originalText = btn.innerText;
+                    btn.innerText = "COPIED!";
+                    setTimeout(() => btn.innerText = originalText, 2000);
+                });
+            } else {
+                alert("Please enter data first");
+            }
+        }
+    </script>
+</body>
+</html>
