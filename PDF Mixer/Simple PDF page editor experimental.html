@@ -3,286 +3,731 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PDF Mixer | Ultimate experimental</title>
-<!-- Created by Mark L 2026-->
+<title>PDF Mixer | Ultimate</title>
+
+<!-- Created by Mark L 2026 -->
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-body { font-family: 'Plus Jakarta Sans', sans-serif; background:#0f172a; color:#f1f5f9; }
-.glass { background:rgba(30,41,59,0.7); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.08); }
-.card:hover .file-actions { opacity: 1; }
-.selected-page { outline:4px solid #3b82f6; outline-offset: -4px; filter: brightness(1.1); }
-.active-file { border: 1px solid #3b82f6; background: #1e293b; }
-.page-hover { cursor: pointer; transition: transform 0.2s; }
-.page-hover:hover { transform: scale(1.02); }
-.file-badge { font-size: 10px; background: #3b82f6; padding: 1px 6px; border-radius: 4px; color: #fff; }
-#fileList.dragover { border: 2px dashed #3b82f6; }
 
-#modalOverlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 50; }
-#modalContent { max-width: 90vw; max-height: 90vh; position: relative; }
-#modalContent img { max-height: 85vh; border-radius: 8px; }
-#modalClose { position: absolute; top: -40px; right: 0; color: #fff; font-size: 30px; cursor:pointer; }
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background:#0f172a;
+  color:#f1f5f9;
+}
+
+.glass {
+  background:rgba(30,41,59,0.7);
+  backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,0.08);
+}
+
+.selected {
+  outline: 3px solid #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59,130,246,0.35);
+  transform: scale(1.06);
+  position: relative;
+  z-index: 5;
+}
+
+.selected.page-hover:hover {
+  transform: scale(1.06);
+}
+
+.page-hover:hover {
+  transform: scale(1.05);
+  transition: transform 0.2s;
+}
+
+.file-badge {
+  font-size: 10px;
+  background:#3b82f6;
+  padding:1px 4px;
+  border-radius:4px;
+  color:#fff;
+  margin-left:6px;
+}
+
+.progress-bar {
+  background:#3b82f6;
+  height:6px;
+  border-radius:4px;
+  transition: width 0.2s;
+}
+
+button {
+  transition: transform 0.1s, filter 0.1s;
+}
+
+button:active {
+  transform: scale(0.95);
+  filter: brightness(0.85);
+}
+
+.active-file {
+  background: #1e293b;
+  outline: 2px solid #3b82f6;
+}
+
+#fileList div:hover {
+  background: #334155;
+}
+
+@media (min-width: 1600px) {
+  body {
+    font-size: 15px;
+  }
+}
+
+@media (min-width: 2000px) {
+  .glass {
+    padding: 1.25rem;
+  }
+}
 </style>
 </head>
+
 <body class="p-6">
 
-<div class="max-w-7xl mx-auto space-y-6">
-    <header class="flex justify-between items-end">
-        <div>
-            <h1 class="text-5xl font-extrabold text-white">PDF <span class="text-blue-500">Mixer</span></h1>
-            <p class="text-slate-400 mt-2">Merge, reorder, and extract pages locally.</p>
-        </div>
-        <div class="text-right">
-            <button onclick="clearAll()" class="text-xs text-red-400 hover:text-red-300 font-bold uppercase tracking-widest mb-2 block ml-auto">× Clear All</button>
-            <p class="text-xs text-slate-500">🛡️ All processing happens in-browser.</p>
-        </div>
-    </header>
+<div class="max-w-screen-2xl 2xl:max-w-[1800px] mx-auto space-y-6">
 
-    <div class="grid lg:grid-cols-12 gap-6">
-        <div class="lg:col-span-3 glass p-5 rounded-3xl space-y-4 h-fit">
-            <input type="file" id="input" class="hidden" multiple accept="application/pdf">
-            <button onclick="document.getElementById('input').click()" class="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-bold transition">Add PDF Files</button>
-            
-            <div class="pt-4 space-y-3 border-t border-slate-700">
-                <button onclick="quickMerge()" class="w-full bg-emerald-600 hover:bg-emerald-500 py-2 rounded-lg font-semibold transition shadow-lg shadow-emerald-900/20">Quick Merge All</button>
-                <button onclick="exportSelected()" class="w-full bg-white text-black hover:bg-slate-200 py-2 rounded-lg font-bold transition">Export Selected</button>
-            </div>
+<header class="space-y-2">
+<h1 class="text-5xl font-extrabold">PDF <span class="text-blue-500">Mixer</span></h1>
+<p class="text-slate-400 text-lg">Merge, reorder, extract, and preview pages with full control.</p>
+<p class="text-sm text-slate-400">🛡️ All files are processed locally in your browser.</p>
+</header>
 
-            <div class="text-[11px] text-slate-500 leading-relaxed pt-2">
-                • <b>Quick Merge:</b> Joins every page of every file.<br>
-                • <b>Export Selected:</b> Only includes pages you've clicked.<br>
-                • <b>Reorder:</b> Drag files in the list to change merge order.
-            </div>
-        </div>
+<div class="grid grid-cols-1 md:grid-cols-12 xl:grid-cols-12 2xl:grid-cols-12 gap-6">
 
-        <div class="lg:col-span-3 glass p-5 rounded-3xl flex flex-col min-h-[400px]">
-            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">Files</h2>
-            <div id="fileList" class="space-y-2 overflow-y-auto max-h-[60vh]"></div>
-        </div>
+<div class="md:col-span-3 xl:col-span-3 2xl:col-span-2 glass p-4 rounded-3xl space-y-4">
 
-        <div class="lg:col-span-6 glass p-5 rounded-3xl">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500">Page Selection</h2>
-                <div id="pageControls" class="hidden space-x-3">
-                    <button onclick="selectAllInFile(true)" class="text-xs text-blue-400 hover:underline">Select All</button>
-                    <button onclick="selectAllInFile(false)" class="text-xs text-slate-500 hover:underline">Clear</button>
-                </div>
-            </div>
-            <div id="pages" class="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-[70vh] overflow-y-auto pr-2">
-                <p class="col-span-full text-center text-slate-600 py-10 italic">Select a file to manage pages</p>
-            </div>
-        </div>
-    </div>
+<input type="file" id="input" class="hidden" multiple accept="application/pdf">
+
+<button onclick="document.getElementById('input').click()" class="w-full bg-blue-600 py-2 rounded-lg">
+Add Files
+</button>
+
+<div class="space-y-2">
+<button onclick="quickMerge()" class="w-full bg-green-500 py-2 rounded-lg font-bold">Quick Merge All</button>
+<button onclick="exportPDF()" id="exportBtn" class="w-full bg-white text-black py-2 rounded-lg font-bold">Export Selected</button>
 </div>
 
-<canvas id="renderCanvas" class="hidden"></canvas>
+<div class="w-full bg-slate-800 h-3 rounded mt-3 overflow-hidden">
+<div id="progress" class="progress-bar w-0"></div>
+</div>
 
-<div id="modalOverlay">
-    <div id="modalContent">
-        <div id="modalClose">&times;</div>
-        <img id="modalImage" src="">
+<button onclick="resetAll()" class="w-full bg-red-500 py-2 rounded-lg font-bold">
+Clear / Reset
+</button>
+
+<div class="text-sm text-slate-300 mt-3 space-y-2 leading-relaxed">
+<p class="font-semibold text-white">How to use:</p>
+<p>1. Add PDF files</p>
+<p>2. Click pages to select</p>
+<p>3. Drag files to reorder</p>
+<p class="pt-1">• Quick Merge = all pages</p>
+<p>• Export Selected = chosen pages only</p>
+</div>
+
+</div>
+
+<div class="md:col-span-3 xl:col-span-2 2xl:col-span-2 glass p-4 rounded-3xl">
+<h2 class="text-sm mb-2">Files</h2>
+<div id="fileList" class="space-y-2"></div>
+</div>
+
+<div class="md:col-span-6 xl:col-span-7 2xl:col-span-8 glass p-4 rounded-3xl">
+<h2 class="text-sm mb-2">Pages - Click to select, double click for preview</h2>
+
+<div id="pages" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-3 max-h-[75vh] 2xl:max-h-[85vh] overflow-y-auto"></div>
+
+</div>
+</div>
+</div>
+
+<canvas id="c" class="hidden"></canvas>
+<div id="previewModal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-80 z-50" onclick="closePreview()">
+  <div class="relative flex flex-col items-center" onclick="event.stopPropagation()">
+
+<div id="previewInfo" class="text-sm text-slate-300 mb-2"></div>
+
+<div class="w-full flex justify-between items-center mb-3 px-2 sticky top-0 bg-black bg-opacity-80">
+  
+  <div class="flex gap-2">
+    <button onclick="zoomOut()" class="bg-slate-700 text-white px-3 py-1 rounded">-</button>
+    <button onclick="zoomIn()" class="bg-slate-700 text-white px-3 py-1 rounded">+</button>
+    <button onclick="openNewTab()" class="bg-blue-600 text-white px-3 py-1 rounded">Open</button>
+  </div>
+
+  <button onclick="closePreview()" class="bg-red-500 text-white px-4 py-1 rounded">
+    Close
+  </button>
+
+</div>
+
+    <div class="flex items-center gap-4 max-h-[90vh]">
+      <button onclick="prevPage()" class="bg-slate-700 text-white px-3 py-2 rounded">←</button>
+
+      <img id="previewImage" class="rounded shadow-lg transition-transform duration-200 max-h-[90vh] max-w-[90vw] object-contain" />
+
+      <button onclick="nextPage()" class="bg-slate-700 text-white px-3 py-2 rounded">→</button>
     </div>
+  <div id="previewStrip" class="flex gap-2 overflow-x-auto mt-3 max-w-[90vw] px-2"></div>
+  </div>
 </div>
 
 <script>
-    const pdfjsLib = window['pdfjs-dist/build/pdf'];
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-    
-    let files = [];
-    let currentFileIndex = null;
+const pdfjsLib = window['pdfjs-dist/build/pdf'];
 
-    const input = document.getElementById('input');
-    const fileListContainer = document.getElementById('fileList');
-    const pagesContainer = document.getElementById('pages');
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
-    input.addEventListener('change', async e => {
-        handleFiles(e.target.files);
-        e.target.value = '';
-    });
+let files = [],
+currentFileIndex = 0;
 
-    async function handleFiles(uploadedFiles) {
-        for (const file of uploadedFiles) {
-            if (file.type !== 'application/pdf') continue;
-            const buf = await file.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
-            
-            // Start with NO pages selected as requested
-            files.push({ 
-                name: file.name, 
-                buffer: buf, 
-                selectedPages: [], 
-                pdf 
-            });
-        }
-        renderFiles();
-        if (files.length > 0 && currentFileIndex === null) loadPages(0);
-    }
+let previewState = {
+  fileIndex: 0,
+  pageIndex: 0,
+  zoom: 1
+};
 
-    function renderFiles() {
-        fileListContainer.innerHTML = '';
-        files.forEach((f, i) => {
-            const div = document.createElement('div');
-            div.className = `card p-3 rounded-xl cursor-pointer flex justify-between items-center transition ${currentFileIndex === i ? 'active-file shadow-lg' : 'bg-slate-800/50 hover:bg-slate-800'}`;
-            div.onclick = () => loadPages(i);
-            
-            div.innerHTML = `
-                <div class="flex items-center space-x-3 truncate">
-                    <span class="file-badge">${f.selectedPages.length}</span>
-                    <span class="truncate text-sm font-medium" id="name-${i}">${f.name}</span>
-                </div>
-                <div class="file-actions opacity-0 flex items-center space-x-1">
-                    <button onclick="renameFile(event, ${i})" class="text-slate-400 hover:text-blue-400 p-1">✎</button>
-                    <button onclick="removeFile(event, ${i})" class="text-slate-400 hover:text-red-500 p-1 text-lg">&times;</button>
-                </div>
-            `;
-            fileListContainer.appendChild(div);
-        });
+const input = document.getElementById('input');
 
-        new Sortable(fileListContainer, {
-            animation: 150,
-            onEnd: (e) => {
-                const moved = files.splice(e.oldIndex, 1)[0];
-                files.splice(e.newIndex, 0, moved);
-                renderFiles();
-            }
-        });
-    }
+input.addEventListener('change', async e => {
 
-    function renameFile(e, index) {
-        e.stopPropagation();
-        const newName = prompt("Enter new filename:", files[index].name);
-        if (newName) {
-            files[index].name = newName.endsWith('.pdf') ? newName : newName + '.pdf';
-            renderFiles();
-        }
-    }
+if(!e.target.files.length) return;
 
-    function removeFile(e, index) {
-        e.stopPropagation();
-        files.splice(index, 1);
-        if (currentFileIndex === index) {
-            currentFileIndex = null;
-            pagesContainer.innerHTML = '<p class="col-span-full text-center text-slate-600 py-10 italic">Select a file to manage pages</p>';
-            document.getElementById('pageControls').classList.add('hidden');
-        }
-        renderFiles();
-    }
+for(const file of e.target.files){
 
-    function clearAll() {
-        if(confirm("Are you sure you want to remove all files?")) {
-            files = [];
-            currentFileIndex = null;
-            pagesContainer.innerHTML = '<p class="col-span-full text-center text-slate-600 py-10 italic">Select a file to manage pages</p>';
-            document.getElementById('pageControls').classList.add('hidden');
-            renderFiles();
-        }
-    }
+const originalBuffer = await file.arrayBuffer();
+const previewBuffer = originalBuffer.slice(0);
 
-    async function loadPages(index) {
-        currentFileIndex = index;
-        const file = files[index];
-        pagesContainer.innerHTML = '<p class="col-span-full text-center text-blue-400 py-10 animate-pulse">Loading Viewport...</p>';
-        document.getElementById('pageControls').classList.remove('hidden');
-        renderFiles();
+try{
 
-        const tempContainer = document.createDocumentFragment();
-        for (let i = 1; i <= file.pdf.numPages; i++) {
-            const page = await file.pdf.getPage(i);
-            const canvas = document.getElementById('renderCanvas');
-            const ctx = canvas.getContext('2d');
-            const viewport = page.getViewport({ scale: 0.4 });
-            
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-            await page.render({ canvasContext: ctx, viewport }).promise;
+const pdf = await pdfjsLib.getDocument({
+data:new Uint8Array(previewBuffer)
+}).promise;
 
-            const wrapper = document.createElement('div');
-            wrapper.className = "relative group";
-            
-            const img = document.createElement('img');
-            img.src = canvas.toDataURL();
-            img.className = `rounded-lg w-full shadow-md page-hover ${file.selectedPages.includes(i-1) ? 'selected-page' : ''}`;
-            
-            img.onclick = () => {
-                const pIdx = i - 1;
-                const indexInSelection = file.selectedPages.indexOf(pIdx);
-                if (indexInSelection > -1) {
-                    file.selectedPages.splice(indexInSelection, 1);
-                    img.classList.remove('selected-page');
-                } else {
-                    file.selectedPages.push(pIdx);
-                    file.selectedPages.sort((a,b) => a-b);
-                    img.classList.add('selected-page');
-                }
-                renderFiles();
-            };
+files.push({
+name:file.name,
+buffer:originalBuffer,
+selectedPages:[],
+pdf
+});
 
-            img.ondblclick = () => {
-                document.getElementById('modalImage').src = img.src;
-                document.getElementById('modalOverlay').style.display = 'flex';
-            };
+}catch(err){
 
-            wrapper.appendChild(img);
-            tempContainer.appendChild(wrapper);
-        }
-        pagesContainer.innerHTML = '';
-        pagesContainer.appendChild(tempContainer);
-    }
+console.error("PDF.js failed to load", err);
+alert("Failed to load " + file.name);
 
-    function selectAllInFile(select) {
-        if (currentFileIndex === null) return;
-        const file = files[currentFileIndex];
-        file.selectedPages = select ? Array.from({length: file.pdf.numPages}, (_, i) => i) : [];
-        loadPages(currentFileIndex);
-    }
+}
+}
 
-    // --- Core PDF Processing ---
+renderFiles();
 
-    async function quickMerge() {
-        if (files.length === 0) return alert("Add some files first!");
-        const mergedPdf = await PDFLib.PDFDocument.create();
-        for (const file of files) {
-            const srcDoc = await PDFLib.PDFDocument.load(file.buffer);
-            const allIndices = Array.from({length: srcDoc.getPageCount()}, (_, i) => i);
-            const pages = await mergedPdf.copyPages(srcDoc, allIndices);
-            pages.forEach(p => mergedPdf.addPage(p));
-        }
-        await download(mergedPdf, "merged_full.pdf");
-    }
+if(files.length) loadPages(0);
 
-    async function exportSelected() {
-        const totalSelected = files.reduce((sum, f) => sum + f.selectedPages.length, 0);
-        if (totalSelected === 0) return alert("No pages selected! Click on page thumbnails to select them for export.");
+e.target.value='';
 
-        const mergedPdf = await PDFLib.PDFDocument.create();
-        for (const file of files) {
-            if (file.selectedPages.length > 0) {
-                const srcDoc = await PDFLib.PDFDocument.load(file.buffer);
-                const sortedIndices = [...file.selectedPages].sort((a,b) => a-b);
-                const pages = await mergedPdf.copyPages(srcDoc, sortedIndices);
-                pages.forEach(p => mergedPdf.addPage(p));
-            }
-        }
-        await download(mergedPdf, "extracted_pages.pdf");
-    }
+});
 
-    async function download(pdfDoc, filename) {
-        const pdfBytes = await pdfDoc.save();
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
-    }
+function renderFiles(){
 
-    document.getElementById('modalClose').onclick = () => document.getElementById('modalOverlay').style.display='none';
+const list=document.getElementById('fileList');
+
+list.innerHTML='';
+
+files.forEach((f,i)=>{
+
+const div=document.createElement('div');
+
+div.className =
+"p-2 bg-slate-800 rounded flex justify-between cursor-pointer";
+
+if(i === currentFileIndex){
+div.classList.add("active-file");
+}
+
+div.innerHTML=`
+<span class="truncate max-w-[65%]">${f.name}</span>
+<span class="file-badge">${f.selectedPages.length}/${f.pdf.numPages}</span>
+`;
+
+div.onclick=()=>loadPages(i);
+
+list.appendChild(div);
+
+});
+
+new Sortable(list,{
+animation:150,
+onEnd:e=>{
+const moved=files.splice(e.oldIndex,1)[0];
+files.splice(e.newIndex,0,moved);
+}
+});
+
+}
+
+async function loadPages(index){
+
+currentFileIndex = index;
+
+renderFiles();
+
+const file=files[index];
+
+const container=document.getElementById('pages');
+
+container.innerHTML='';
+
+const scale =
+window.innerWidth > 3000 ? 1.8 :
+window.innerWidth > 2000 ? 1.5 :
+window.innerWidth > 1400 ? 1.2 :
+window.innerWidth > 900 ? 0.7 : 0.4;
+
+for(let i=1;i<=file.pdf.numPages;i++){
+
+const page=await file.pdf.getPage(i);
+
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+
+const viewport=page.getViewport({scale});
+
+canvas.width=viewport.width;
+canvas.height=viewport.height;
+
+await page.render({
+canvasContext:ctx,
+viewport
+}).promise;
+
+const wrapper = document.createElement('div');
+
+wrapper.className = "relative transition";
+
+const img = document.createElement('img');
+
+img.src = canvas.toDataURL();
+
+img.className =
+"rounded cursor-pointer page-hover";
+
+const check = document.createElement('div');
+
+check.innerHTML = "✔";
+
+check.className =
+"absolute top-2 right-2 bg-blue-600 text-white text-sm px-2 py-1 rounded shadow-lg hidden";
+
+if(file.selectedPages.includes(i-1)){
+img.classList.add('selected');
+img.style.filter = "brightness(0.75)";
+check.classList.remove('hidden');
+}
+
+wrapper.onclick = () => {
+
+const idx = file.selectedPages.indexOf(i-1);
+
+if(idx > -1){
+
+file.selectedPages.splice(idx,1);
+
+img.classList.remove('selected');
+
+img.style.filter = "brightness(1)";
+
+check.classList.add('hidden');
+
+}else{
+
+file.selectedPages.push(i-1);
+
+img.classList.add('selected');
+
+img.style.filter = "brightness(0.75)";
+
+check.classList.remove('hidden');
+
+}
+wrapper.ondblclick = () => {
+  openPreview(img.src, currentFileIndex, i-1);
+};
+
+renderFiles();
+
+};
+
+wrapper.appendChild(img);
+wrapper.appendChild(check);
+
+container.appendChild(wrapper);
+
+}
+
+}
+
+async function quickMerge(){
+
+if(!files.length) return alert("No files");
+
+const { PDFDocument } = PDFLib;
+
+const out = await PDFDocument.create();
+
+const progress=document.getElementById('progress');
+
+progress.style.width='0%';
+
+try{
+
+const total=files.reduce(
+(a,f)=>a+f.pdf.numPages,
+0
+);
+
+const minTime = 1500;
+const delayPerPage = Math.max(0, minTime / total);
+
+let done=0;
+
+for(const f of files){
+
+const src=await PDFDocument.load(
+f.buffer,
+{ignoreEncryption:true}
+);
+
+const copied=await out.copyPages(
+src,
+[...Array(src.getPageCount()).keys()]
+);
+
+for(const p of copied){
+
+out.addPage(p);
+
+done++;
+
+progress.style.width=
+`${Math.round(done/total*100)}%`;
+
+await new Promise(
+r=>setTimeout(r,delayPerPage)
+);
+
+}
+}
+
+progress.style.width='100%';
+
+await download(out,'merged.pdf');
+
+}catch(err){
+
+console.error(err);
+alert("Merge failed");
+
+}
+
+progress.style.width='0%';
+
+}
+
+async function exportPDF(){
+
+if(!files.length) return alert("No files");
+
+const btn=document.getElementById('exportBtn');
+
+btn.innerText="Processing...";
+btn.disabled=true;
+
+const progress=document.getElementById('progress');
+
+progress.style.width='0%';
+
+try{
+
+const { PDFDocument } = PDFLib;
+
+const out = await PDFDocument.create();
+
+let total=files.reduce(
+(a,f)=>a+f.selectedPages.length,
+0
+);
+
+if(total===0){
+
+alert("No pages selected");
+
+btn.innerText="Export Selected";
+btn.disabled=false;
+
+return;
+
+}
+
+const minTime = 1500;
+const delayPerPage = Math.max(0, minTime / total);
+
+let done=0;
+
+for(const f of files){
+
+if(!f.selectedPages.length) continue;
+
+const src=await PDFDocument.load(
+f.buffer,
+{ignoreEncryption:true}
+);
+
+const copied=await out.copyPages(
+src,
+f.selectedPages
+);
+
+for(const p of copied){
+
+out.addPage(p);
+
+done++;
+
+progress.style.width=
+`${Math.round(done/total*100)}%`;
+
+await new Promise(
+r=>setTimeout(r,delayPerPage)
+);
+
+}
+}
+
+progress.style.width='100%';
+
+await download(out,'selected.pdf');
+
+}catch(err){
+
+console.error(err);
+alert("Export failed");
+
+}
+
+btn.innerText="Export Selected";
+btn.disabled=false;
+
+progress.style.width='0%';
+
+}
+
+function resetAll(){
+
+files=[];
+
+document.getElementById('fileList').innerHTML='';
+
+document.getElementById('pages').innerHTML='';
+
+document.getElementById('progress').style.width='0%';
+
+const exportBtn =
+document.getElementById('exportBtn');
+
+exportBtn.innerText = "Export Selected";
+exportBtn.disabled = false;
+
+}
+
+async function download(doc,name){
+
+const bytes=await doc.save();
+
+const blob=new Blob(
+[bytes],
+{type:'application/pdf'}
+);
+
+const url=URL.createObjectURL(blob);
+
+const a=document.createElement('a');
+
+a.href=url;
+a.download=name;
+
+document.body.appendChild(a);
+
+a.click();
+
+a.remove();
+
+setTimeout(()=>{
+URL.revokeObjectURL(url);
+},1000);
+
+}
+async function renderPreviewStrip(){
+
+const strip = document.getElementById('previewStrip');
+if(!strip) return;
+
+strip.innerHTML = '';
+
+const file = files[previewState.fileIndex];
+if(!file) return;
+
+const scale = 0.2;
+
+for(let i = 1; i <= file.pdf.numPages; i++){
+
+const page = await file.pdf.getPage(i);
+
+const canvas = document.createElement('canvas');
+const ctx = canvas.getContext('2d');
+
+const viewport = page.getViewport({ scale });
+
+canvas.width = viewport.width;
+canvas.height = viewport.height;
+
+await page.render({
+canvasContext: ctx,
+viewport
+}).promise;
+
+const img = document.createElement('img');
+
+img.src = canvas.toDataURL();
+img.className = "w-16 h-auto rounded cursor-pointer opacity-70 hover:opacity-100";
+
+if(i - 1 === previewState.pageIndex){
+img.style.outline = "2px solid #3b82f6";
+img.style.opacity = "1";
+}
+
+img.onclick = () => {
+previewState.pageIndex = i - 1;
+updatePreviewPage();
+};
+
+strip.appendChild(img);
+}
+}
+function openPreview(src, fileIndex, pageIndex){
+
+previewState.fileIndex = currentFileIndex;
+previewState.pageIndex = pageIndex;
+previewState.zoom = 1;
+
+const modal = document.getElementById('previewModal');
+
+modal.classList.remove('hidden');
+modal.classList.add('flex');
+
+updatePreviewPage();
+}
+
+function closePreview(){
+  const modal = document.getElementById('previewModal');
+  const img = document.getElementById('previewImage');
+
+  img.src = '';
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+}
+function zoomIn(){
+previewState.zoom += 0.2;
+applyZoom();
+}
+
+function zoomOut(){
+previewState.zoom = Math.max(0.4, previewState.zoom - 0.2);
+applyZoom();
+}
+
+function applyZoom(){
+const img = document.getElementById('previewImage');
+img.style.transform = `scale(${previewState.zoom})`;
+}
+
+function nextPage(){
+if(!files.length) return;
+
+let file = files[previewState.fileIndex];
+
+if(previewState.pageIndex < file.pdf.numPages - 1){
+previewState.pageIndex++;
+updatePreviewPage();
+return;
+}
+
+if(previewState.fileIndex < files.length - 1){
+previewState.fileIndex++;
+previewState.pageIndex = 0;
+updatePreviewPage();
+}
+}
+
+function prevPage(){
+if(!files.length) return;
+
+if(previewState.pageIndex > 0){
+previewState.pageIndex--;
+updatePreviewPage();
+return;
+}
+
+if(previewState.fileIndex > 0){
+previewState.fileIndex--;
+const prevFile = files[previewState.fileIndex];
+previewState.pageIndex = prevFile.pdf.numPages - 1;
+updatePreviewPage();
+}
+}
+
+async function updatePreviewPage(){
+const file = files[previewState.fileIndex];
+const page = await file.pdf.getPage(previewState.pageIndex + 1);
+
+const canvas = document.createElement('canvas');
+const ctx = canvas.getContext('2d');
+
+const viewport = page.getViewport({scale:2});
+
+canvas.width = viewport.width;
+canvas.height = viewport.height;
+
+await page.render({
+canvasContext: ctx,
+viewport
+}).promise;
+
+const img = document.getElementById('previewImage');
+img.src = canvas.toDataURL();
+
+const info = document.getElementById('previewInfo');
+if(info){
+info.innerText = `${file.name} — Page ${previewState.pageIndex + 1} / ${file.pdf.numPages}`;
+}
+
+applyZoom();
+}
+
+function openNewTab(){
+const img = document.getElementById('previewImage').src;
+const win = window.open();
+win.document.write(`<img src="${img}" style="width:100%">`);
+}
 </script>
+
 </body>
 </html>
