@@ -17,15 +17,15 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- JSON Side -->
             <div class="space-y-2">
-                <label class="text-sm font-bold text-white-600 uppercase">JSON Data</label>
-                <textarea id="json-input" class="w-full h-80 p-4 border rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm" placeholder='[Paste Data Here]'></textarea>
+                <label class="text-sm font-bold text-white uppercase">JSON Data</label>
+                <textarea id="json-input" class="w-full h-80 p-4 border rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm text-slate-900" placeholder='[Paste Data Here]'></textarea>
                 <button onclick="convertToCSV()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition shadow-md">Convert to CSV ⮕</button>
             </div>
 
             <!-- CSV Side -->
             <div class="space-y-2">
-                <label class="text-sm font-bold text-white-600 uppercase">CSV Data</label>
-                <textarea id="csv-input" class="w-full h-80 p-4 border rounded-xl shadow-sm focus:ring-2 focus:ring-emerald-500 outline-none font-mono text-sm" placeholder="[Paste Data Here]"></textarea>
+                <label class="text-sm font-bold text-white uppercase">CSV Data</label>
+                <textarea id="csv-input" class="w-full h-80 p-4 border rounded-xl shadow-sm focus:ring-2 focus:ring-emerald-500 outline-none font-mono text-sm text-slate-900" placeholder="[Paste Data Here]"></textarea>
                 <button onclick="convertToJSON()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-medium transition shadow-md">⬅ Convert to JSON</button>
             </div>
         </div>
