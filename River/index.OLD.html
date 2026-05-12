@@ -38,10 +38,8 @@
         .btn { padding: 0 12px; height: 35px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; font-size: 0.85rem; border-bottom: 3px solid rgba(0,0,0,0.2); }
         .btn-new { background: #2196F3; }
         .btn-reset { background: #f44336; }
-        .btn-rules { background: #1726a8; }
+        .btn-rules { background: #607d8b; }
         .btn:active { transform: translateY(2px); border-bottom: none; }
-        .btn-save { background: #4caf50; }
-        .btn-emailhtml { background: #673ab7; }
 
         /* Table & Scroll Logic */
         .scroll-area { flex: 1; overflow-y: auto; padding: 0 20px 10px 20px; }
@@ -79,114 +77,6 @@
         .suit-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border: 5px solid #333; z-index: 1100; border-radius: 15px; }
         .suit-option { font-size: 5rem; padding: 10px; cursor: pointer; display: inline-block; font-weight: bold; }
         .red { color: #d32f2f; } .black { color: #000; }
-    @media (max-width: 768px) {
-
-    body {
-        overflow: auto;
-    }
-
-    .sticky-top {
-        padding: 5px 10px;
-    }
-
-    h1 {
-        font-size: 1.2rem;
-        line-height: 1.2;
-    }
-
-    .setup-container {
-        width: 100%;
-        padding: 8px 10px;
-        box-sizing: border-box;
-    }
-
-    .setup-controls {
-        gap: 10px;
-    }
-
-    .setup-label {
-        font-size: 0.65rem;
-    }
-
-    input#playerCount {
-        width: 45px;
-        font-size: 1rem;
-    }
-
-    select#roundOrder,
-    .btn {
-        height: 32px;
-        font-size: 0.75rem;
-    }
-
-    .scroll-area {
-        overflow: auto;
-        padding: 0 6px 10px 6px;
-    }
-
-    table {
-        min-width: max-content;
-    }
-
-    th,
-    td {
-        padding: 4px;
-    }
-
-    .name-input {
-        width: 72px;
-        font-size: 0.8rem;
-        padding: 3px;
-    }
-
-    .score-input {
-        width: 52px;
-        padding: 4px;
-        font-size: 0.95rem;
-    }
-
-    .total-display {
-        font-size: 1rem;
-    }
-
-    .rank-tag {
-        font-size: 0.6rem;
-    }
-
-    .trophy {
-        font-size: 0.9rem;
-        width: 16px;
-    }
-
-    .score-gap {
-        width: 6px;
-    }
-
-    .card {
-        width: 38px;
-        height: 58px;
-        font-size: 1.6rem;
-    }
-
-    .total-tricks-col,
-    .hand-size-cell {
-        font-size: 1.1rem !important;
-        width: 38px;
-    }
-
-    .suit-option {
-        font-size: 3.5rem;
-        padding: 5px;
-    }
-
-    .suit-popup {
-        width: 90%;
-        max-width: 320px;
-        padding: 15px;
-        box-sizing: border-box;
-        text-align: center;
-    }
-}
     </style>
 </head>
 <body>
@@ -209,8 +99,6 @@
             <button class="btn btn-new" onclick="confirmNewGame()">START</button>
             <button class="btn btn-reset" onclick="clearData()">RESET</button>
             <button class="btn btn-rules" onclick="toggleRules()">RULES</button>
-            <button class="btn btn-save" onclick="saveCSV()">SAVE CSV</button>
-            <button class="btn btn-emailhtml" onclick="emailScoresHTML()">EMAIL</button>
         </div>
     </div>
 </div>
@@ -294,23 +182,12 @@
         let bodyHtml = "";
         state.rounds.forEach((round, rIdx) => {
             let rowBidSum = 0;
-            const suitClass =
-    round.trump === '♥' || round.trump === '♦'
-        ? 'red'
-        : round.trump
-            ? 'black'
-            : '';
-
-const ntStyle = round.trump === 'NT'
-    ? 'style="font-size:1.4rem;"'
-    : '';
-
-let rowHtml = `<tr><td class="hand-size-cell">${round.handSize}</td><td><div class="card ${round.trump ? '' : 'back'} ${suitClass}" ${ntStyle} onclick="openSuitPicker(this, ${rIdx})">${round.trump}</div></td>`;
+            let rowHtml = `<tr><td class="hand-size-cell">${round.handSize}</td><td><div class="card ${round.trump ? '' : 'back'}" onclick="openSuitPicker(this, ${rIdx})">${round.trump}</div></td>`;
             state.names.forEach((_, pIdx) => {
                 const d = round.data[pIdx]; rowBidSum += (parseInt(d.bid) || 0);
                 rowHtml += `<td>
-                    <input type="number" class="score-input" min="0" max="${round.handSize}" placeholder="Tricks" value="${d.bid}" onfocus="this.select()" onkeydown="checkKey(event)" onchange="handleBid(${rIdx}, ${pIdx}, this)">
-                    <input type="number" class="score-input" min="0" max="${round.handSize}" placeholder="Won" value="${d.won}" onfocus="this.select()" onkeydown="checkKey(event)" onchange="handleWon(${rIdx}, ${pIdx}, this)">
+                    <input type="number" class="score-input" placeholder="Tricks" value="${d.bid}" onfocus="this.select()" onkeydown="checkKey(event)" onchange="handleBid(${rIdx}, ${pIdx}, this)">
+                    <input type="number" class="score-input" placeholder="Score" value="${d.won}" onfocus="this.select()" onkeydown="checkKey(event)" onchange="handleWon(${rIdx}, ${pIdx}, this)">
                 </td>`;
             });
             rowHtml += `<td id="bid-sum-${rIdx}" class="total-tricks-col">${rowBidSum}</td></tr>`;
@@ -337,72 +214,29 @@ let rowHtml = `<tr><td class="hand-size-cell">${round.handSize}</td><td><div cla
 
     function handleBid(rIdx, pIdx, input) {
         let state = JSON.parse(localStorage.getItem('ohHellGame'));
+        const val = parseInt(input.value);
+        const handSize = state.rounds[rIdx].handSize;
+        const others = state.rounds[rIdx].data.reduce((s, d, i) => i === pIdx ? s : s + (parseInt(d.bid) || 0), 0);
+        const filled = state.rounds[rIdx].data.filter((d, i) => i !== pIdx && d.bid !== '').length;
 
-        if (input.value === '') {
-        state.rounds[rIdx].data[pIdx].bid = '';
+        if (filled === state.count - 1 && (others + val) === handSize) {
+            alert(`THE HOOK! Total cannot equal ${handSize}.`);
+            input.value = '';
+            state.rounds[rIdx].data[pIdx].bid = '';
+        } else {
+            state.rounds[rIdx].data[pIdx].bid = input.value;
+            document.getElementById(`bid-sum-${rIdx}`).innerText = others + (val || 0);
+        }
         localStorage.setItem('ohHellGame', JSON.stringify(state));
         calcScores();
-        return;
     }
-
-    let val = parseInt(input.value);
-    const handSize = state.rounds[rIdx].handSize;
-
-    if (isNaN(val) || val < 0 || val > handSize) {
-        alert(`Bid must be between 0 and ${handSize}.`);
-        input.value = '';
-        state.rounds[rIdx].data[pIdx].bid = '';
-        localStorage.setItem('ohHellGame', JSON.stringify(state));
-        calcScores();
-        return;
-    }
-
-    const others = state.rounds[rIdx].data.reduce(
-        (s, d, i) => i === pIdx ? s : s + (parseInt(d.bid) || 0),
-        0
-    );
-
-    const filled = state.rounds[rIdx].data.filter(
-        (d, i) => i !== pIdx && d.bid !== ''
-    ).length;
-
-    if (filled === state.count - 1 && (others + val) === handSize) {
-        alert(`THE HOOK! Total cannot equal ${handSize}.`);
-        input.value = '';
-        state.rounds[rIdx].data[pIdx].bid = '';
-    } else {
-        state.rounds[rIdx].data[pIdx].bid = val;
-        document.getElementById(`bid-sum-${rIdx}`).innerText = others + val;
-    }
-
-    localStorage.setItem('ohHellGame', JSON.stringify(state));
-    calcScores();
-}
 
     function handleWon(rIdx, pIdx, input) {
-    let state = JSON.parse(localStorage.getItem('ohHellGame'));
-
-    if (input.value === '') {
-        state.rounds[rIdx].data[pIdx].won = '';
+        let state = JSON.parse(localStorage.getItem('ohHellGame'));
+        state.rounds[rIdx].data[pIdx].won = input.value;
         localStorage.setItem('ohHellGame', JSON.stringify(state));
         calcScores();
-        return;
     }
-
-    let val = parseInt(input.value);
-    const handSize = state.rounds[rIdx].handSize;
-
-    if (isNaN(val) || val < 0 || val > handSize) {
-        alert(`Won tricks must be between 0 and ${handSize}.`);
-        input.value = '';
-        state.rounds[rIdx].data[pIdx].won = '';
-    } else {
-        state.rounds[rIdx].data[pIdx].won = val;
-    }
-
-    localStorage.setItem('ohHellGame', JSON.stringify(state));
-    calcScores();
-}
 
     function openSuitPicker(el, rIdx) {
         currentSuitTarget = { el, rIdx };
@@ -420,237 +254,7 @@ let rowHtml = `<tr><td class="hand-size-cell">${round.handSize}</td><td><div cla
         currentSuitTarget.el.classList.toggle('black', suit === '♠' || suit === '♣' || suit === 'NT');
         document.getElementById('suitPopup').style.display = 'none';
     }
-    function buildGameExport() {
-    const state = JSON.parse(localStorage.getItem('ohHellGame'));
-    if (!state) return null;
-    const now = new Date();
-    const pad = (n) => String(n).padStart(2, '0');
-    const dateStamp =
-        `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-    const timeStamp =
-        `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-    const fileDate =
-        `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}`;
-    const fileName = `River Oh Hell ${fileDate}.csv`;
-    const totals = new Array(state.count).fill(0);
 
-    state.rounds.forEach(r => {
-        r.data.forEach((d, pIdx) => {
-            const b = parseInt(d.bid);
-            const w = parseInt(d.won);
-
-            if (!isNaN(b) && !isNaN(w)) {
-                totals[pIdx] += (b === w) ? (10 + w) : w;
-            }
-        });
-    });
-
-    let csv = '';
-
-    csv += 'River Oh Hell Score Export\n';
-    csv += `Date,${dateStamp}\n`;
-    csv += `Time,${timeStamp}\n`;
-    csv += `Players,${state.count}\n\n`;
-    csv += 'FINAL SCORES\n';
-    csv += 'Rank,Player,Score\n';
-
-    const rankings = state.names.map((name, i) => ({
-        name: name || `Player ${i + 1}`,
-        score: totals[i]
-    }))
-    .sort((a, b) => b.score - a.score);
-
-    rankings.forEach((p, i) => {
-        csv += `${i + 1},${p.name},${p.score}\n`;
-    });
-
-    csv += '\nROUND DETAILS\n';
-
-    let header = 'Round,Hand Size,Trump';
-
-    state.names.forEach((name, i) => {
-        const playerName = name || `Player ${i + 1}`;
-        header += `,${playerName} Bid,${playerName} Won`;
-    });
-
-    header += ',Total Bids\n';
-
-    csv += header;
-
-    state.rounds.forEach((round, rIdx) => {
-
-        let row = `${rIdx + 1},${round.handSize},${round.trump || '-'}`;
-
-        let totalBids = 0;
-
-        round.data.forEach(d => {
-            const bid = d.bid === '' ? '' : d.bid;
-            const won = d.won === '' ? '' : d.won;
-
-            totalBids += parseInt(bid) || 0;
-
-            row += `,${bid},${won}`;
-        });
-
-        row += `,${totalBids}\n`;
-
-        csv += row;
-    });
-
-    return {
-        csv,
-        fileName,
-        dateStamp,
-        timeStamp
-    };
-}
-
-function saveCSV() {
-    const exportData = buildGameExport();
-    if (!exportData) return;
-    const blob = new Blob([exportData.csv], {
-        type: 'text/csv;charset=utf-8;'
-    });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = exportData.fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-function emailScoresHTML() {
-
-    const state = JSON.parse(localStorage.getItem('ohHellGame'));
-    if (!state) return;
-
-    const now = new Date();
-    const pad = (n) => String(n).padStart(2, '0');
-
-    const dateStamp =
-        `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-
-    const totals = new Array(state.count).fill(0);
-
-    state.rounds.forEach(r => {
-        r.data.forEach((d, i) => {
-            const b = parseInt(d.bid);
-            const w = parseInt(d.won);
-            if (!isNaN(b) && !isNaN(w)) {
-                totals[i] += (b === w) ? (10 + w) : w;
-            }
-        });
-    });
-
-    const rankings = state.names.map((name, i) => ({
-        name: name || `Player ${i + 1}`,
-        score: totals[i]
-    })).sort((a, b) => b.score - a.score);
-
-    const win = window.open('', '_blank');
-
-    let html = `
-<!DOCTYPE html>
-<html>
-<head>
-<title>River Oh Hell Report</title>
-<style>
-body { font-family: Arial, sans-serif; padding: 20px; background:#f5f5f5; }
-h1 { margin-bottom: 5px; }
-.meta { color:#555; margin-bottom: 20px; }
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: white;
-    margin-bottom: 20px;
-}
-
-th, td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: center;
-}
-
-th {
-    background: #1b5e20;
-    color: white;
-}
-
-.section {
-    margin-top: 30px;
-}
-
-.btn {
-    display: inline-block;
-    padding: 10px 15px;
-    margin-right: 10px;
-    background: #1b5e20;
-    color: white;
-    text-decoration: none;
-    border-radius: 5px;
-}
-</style>
-</head>
-<body>
-
-<h1>River Oh Hell Score Report</h1>
-<div class="meta">Date: ${dateStamp}</div>
-
-<a class="btn" href="mailto:?subject=River Oh Hell Report ${dateStamp}">Send Email</a>
-<a class="btn" onclick="window.print()">Print</a>
-
-<div class="section">
-<h2>Final Scores</h2>
-<table>
-<tr><th>Rank</th><th>Player</th><th>Score</th></tr>
-`;
-
-    rankings.forEach((p, i) => {
-        html += `
-<tr>
-<td>${i + 1}</td>
-<td>${p.name}</td>
-<td>${p.score}</td>
-</tr>`;
-    });
-
-    html += `
-</table>
-</div>
-
-<div class="section">
-<h2>Round Breakdown</h2>
-`;
-
-    state.rounds.forEach((r, rIdx) => {
-
-        html += `
-<h3>Round ${rIdx + 1} (Hand ${r.handSize} | Trump ${r.trump || '-'})</h3>
-<table>
-<tr><th>Player</th><th>Bid</th><th>Won</th></tr>
-`;
-
-        r.data.forEach((d, i) => {
-            html += `
-<tr>
-<td>${state.names[i] || `Player ${i + 1}`}</td>
-<td>${d.bid || '-'}</td>
-<td>${d.won || '-'}</td>
-</tr>`;
-        });
-
-        html += `</table>`;
-    });
-
-    html += `
-</body>
-</html>
-`;
-
-    win.document.write(html);
-    win.document.close();
-}
     function calcScores() {
         const state = JSON.parse(localStorage.getItem('ohHellGame'));
         if (!state) return;
@@ -665,8 +269,8 @@ th {
 
         const sortedScores = [...new Set(totals)].sort((a, b) => b - a);
         const getOrdinal = (n) => {
-        const s = ["th", "st", "nd", "rd"], v = n % 100;
-        return n + (s[(v - 20) % 10] || s[v] || s[0]);
+            const s = ["th", "st", "nd", "rd"], v = n % 100;
+            return n + (s[(v - 20) % 10] || s[v] || s);
         };
 
         totals.forEach((t, i) => {
