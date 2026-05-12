@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SOS Dark Edition</title>
+    <style>
+        :root {
+            --bg: #121212;
+            --panel: #1e1e1e;
+            --text: #e0e0e0;
+            --accent: #bb86fc;
+            --grid-line: #333;
+        }
+        body { 
+            font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text);
+            display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0;
+        }
+        .panel { 
+            background: var(--panel); padding: 25px; border-radius: 12px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5); width: 100%; max-width: 500px; margin-bottom: 20px; text-align: center; 
+        }
+        
+        /* Grid Styles */
+        #board { 
+            display: grid; gap: 4px; background: var(--grid-line); 
+            border: 4px solid var(--grid-line); margin: 20px auto; position: relative;
+        }
+        .cell { 
+            width: 45px; height: 45px; background: #252525; display: flex; 
+            align-items: center; justify-content: center; font-size: 22px; 
+            font-weight: bold; cursor: pointer; transition: background 0.2s;
+        }
+        .cell:hover { background: #333; }
+
+        /* SOS Line Animation */
+        .sos-line {
+            position: absolute; height: 4px; border-radius: 2px; transform-origin: center left;
+            pointer-events: none; z-index: 10; animation: grow 0.3s ease-out forwards;
+        }
+        @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+        /* Custom Popup */
+        #choice-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 100; justify-content: center; align-items: center;
+        }
+        .popup { background: var(--panel); padding: 30px; border-radius: 15px; border: 1px solid var(--accent); }
+        .choice-btn { 
+            font-size: 30px; padding: 20px 40px; margin: 10px; cursor: pointer; 
+            background: #333; color: white; border: 2px solid var(--accent); border-radius: 8px;
+        }
+        .choice-btn:hover { background: var(--accent); color: #000; }
+
+        /* Inputs & Buttons */
+        input { background: #333; color: white; border: 1px solid #444; padding: 5px; border-radius: 4px; }
+        .btn-main { 
+            background: var(--accent); color: #000; border: none; padding: 12px; 
+            border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px;
+        }
+        .history-item { font-size: 0.85em; color: #aaa; border-bottom: 1px solid #333; padding: 5px 0; }
+    </style>
+</head>
+<body>
+
+    <!-- Setup Screen -->
+    <div id="setup" class="panel">
+        <h2 style="color: var(--accent)">SOS Setup</h2>
+        <div style="margin-bottom:10px;">Grid Size: <input type="number" id="size" value="8" min="3" max="12"></div>
+        <div style="margin-bottom:10px;">Players: <input type="number" id="pCount" value="2" min="2" max="8" onchange="renderPlayers()"></div>
+        <div id="p-inputs"></div>
+        <button class="btn-main" onclick="startGame()">Launch Game</button>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game" class="panel" style="display:none">
+        <div id="score-bar" style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom:15px;"></div>
+        <div id="board"></div>
+        <button class="btn-main" style="background:#444; color:white;" onclick="resetBoard()">Reset Grid</button>
+    </div>
+
+    <!-- History -->
+    <div class="panel">
+        <h4 style="margin:0 0 10px 0;">Match History</h4>
+        <div id="history-list"></div>
+    </div>
+
+    <!-- S or O Popup -->
+    <div id="choice-overlay">
+        <div class="popup">
+            <h3 id="player-prompt">Player Turn</h3>
+            <button class="choice-btn" onclick="makeMove('S')">S</button>
+            <button class="choice-btn" onclick="makeMove('O')">O</button>
+        </div>
+    </div>
+
+    <script>
+        let game = { size: 8, players: [], turn: 0, grid: [], activeCell: null };
+
+        function renderPlayers() {
+            const container = document.getElementById('p-inputs');
+            container.innerHTML = '';
+            const colors = ['#bb86fc', '#03dac6', '#cf6679', '#ffb74d', '#4fc3f7', '#aed581', '#f06292', '#ba68c8'];
+            for(let i=0; i < document.getElementById('pCount').value; i++) {
+                container.innerHTML += `
+                    <div style="margin-bottom:5px;">
+                        <input type="text" id="n${i}" value="Player ${i+1}" style="width:100px">
+                        <input type="color" id="c${i}" value="${colors[i % colors.length]}">
+                    </div>`;
+            }
+        }
+
+        function startGame() {
+            game.size = parseInt(document.getElementById('size').value);
+            game.players = Array.from({length: document.getElementById('pCount').value}, (_, i) => ({
+                name: document.getElementById(`n${i}`).value,
+                color: document.getElementById(`c${i}`).value,
+                score: 0
+            }));
+            document.getElementById('setup').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+            initBoard();
+        }
+
+        function initBoard() {
+            game.grid = Array(game.size).fill().map(() => Array(game.size).fill(null));
+            const boardEl = document.getElementById('board');
+            boardEl.style.gridTemplateColumns = `repeat(${game.size}, 45px)`;
+            boardEl.innerHTML = '';
+            
+            for(let r=0; r<game.size; r++) {
+                for(let c=0; c<game.size; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.onclick = () => openChoice(r, c, cell);
+                    boardEl.appendChild(cell);
+                }
+            }
+            updateUI();
+        }
+
+        function openChoice(r, c, el) {
+            if (game.grid[r][c]) return;
+            game.activeCell = { r, c, el };
+            document.getElementById('player-prompt').innerText = `${game.players[game.turn].name}'s turn`;
+            document.getElementById('player-prompt').style.color = game.players[game.turn].color;
+            document.getElementById('choice-overlay').style.display = 'flex';
+        }
+
+        function makeMove(letter) {
+            const { r, c, el } = game.activeCell;
+            game.grid[r][c] = letter;
+            el.innerText = letter;
+            el.style.color = game.players[game.turn].color;
+            document.getElementById('choice-overlay').style.display = 'none';
+            
+            const points = checkSOS(r, c);
+            if (points > 0) {
+                game.players[game.turn].score += points;
+                if (isFull()) endGame();
+            } else {
+                game.turn = (game.turn + 1) % game.players.length;
+                if (isFull()) endGame();
+            }
+            updateUI();
+        }
+
+        function checkSOS(r, c) {
+            let found = 0;
+            const dirs = [[0,1], [1,0], [1,1], [1,-1]];
+            const get = (y,x) => (y>=0 && y<game.size && x>=0 && x<game.size) ? game.grid[y][x] : null;
+
+            dirs.forEach(([dy, dx]) => {
+                if (game.grid[r][c] === 'S') {
+                    if (get(r+dy,c+dx)==='O' && get(r+2*dy,c+2*dx)==='S') { drawLine(r,c,r+2*dy,c+2*dx); found++; }
+                    if (get(r-dy,c-dx)==='O' && get(r-2*dy,c-2*dx)==='S') { drawLine(r,c,r-2*dy,c-2*dx); found++; }
+                } else {
+                    if (get(r-dy,c-dx)==='S' && get(r+dy,c+dx)==='S') { drawLine(r-dy,c-dx,r+dy,c+dx); found++; }
+                }
+            });
+            return found;
+        }
+
+        function drawLine(r1, c1, r2, c2) {
+            const b = document.getElementById('board');
+            const cells = b.getElementsByClassName('cell');
+            const start = cells[r1 * game.size + c1];
+            const end = cells[r2 * game.size + c2];
+            
+            const line = document.createElement('div');
+            const dist = Math.hypot(end.offsetLeft - start.offsetLeft, end.offsetTop - start.offsetTop);
+            const angle = Math.atan2(end.offsetTop - start.offsetTop, end.offsetLeft - start.offsetLeft);
+            
+            line.className = 'sos-line';
+            line.style.width = dist + 'px';
+            line.style.left = (start.offsetLeft + 22) + 'px';
+            line.style.top = (start.offsetTop + 22) + 'px';
+            line.style.background = game.players[game.turn].color;
+            line.style.transform = `rotate(${angle}rad)`;
+            b.appendChild(line);
+        }
+
+        function updateUI() {
+            document.getElementById('score-bar').innerHTML = game.players.map((p, i) => 
+                `<div style="color:${p.color}; padding:5px; border-radius:4px; background:${i===game.turn ? '#333' : 'transparent'}">
+                    ${p.name}: ${p.score}
+                </div>`).join('');
+        }
+
+        function isFull() { return game.grid.flat().every(cell => cell !== null); }
+
+        function endGame() {
+            const winner = [...game.players].sort((a,b) => b.score - a.score)[0];
+            let history = JSON.parse(localStorage.getItem('sos_history') || '[]');
+            history.unshift({ name: winner.name, score: winner.score, date: new Date().toLocaleTimeString() });
+            localStorage.setItem('sos_history', JSON.stringify(history.slice(0, 10)));
+            alert(`Game Over! ${winner.name} wins with ${winner.score} points!`);
+            loadHistory();
+        }
+
+        function loadHistory() {
+            const history = JSON.parse(localStorage.getItem('sos_history') || '[]');
+            document.getElementById('history-list').innerHTML = history.map(h => 
+                `<div class="history-item"><b>${h.name}</b> won with ${h.score} pts <small>(${h.date})</small></div>`).join('') || 'No records yet.';
+        }
+
+        function resetBoard() { initBoard(); }
+
+        renderPlayers();
+        loadHistory();
+    </script>
+</body>
+</html>

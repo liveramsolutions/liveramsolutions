@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SOS Midnight Pro</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --panel: #161616;
+            --text: #eeeeee;
+            --accent: #03dac6;
+            --cell-bg: #111111;
+            --border: #333333;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text);
+            display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0;
+        }
+
+        .panel { 
+            background: var(--panel); padding: 25px; border-radius: 12px; 
+            border: 1px solid var(--border); box-shadow: 0 10px 40px rgba(0,0,0,0.8); 
+            width: 100%; max-width: 500px; margin-bottom: 20px; text-align: center; 
+        }
+        
+        #score-board {
+            display: flex; flex-wrap: wrap; gap: 15px; justify-content: center;
+            margin-bottom: 20px; padding: 15px; background: #000; border: 1px solid var(--border); border-radius: 8px;
+        }
+
+        .score-item { padding: 5px 10px; border-radius: 4px; transition: all 0.3s; }
+        .active-turn { background: #222; box-shadow: 0 0 10px rgba(255,255,255,0.1); }
+
+        #board { 
+            display: grid; gap: 4px; background: var(--border); 
+            border: 4px solid var(--border); margin: 20px auto; position: relative;
+        }
+        
+        .cell { 
+            width: 45px; height: 45px; background: var(--cell-bg); display: flex; 
+            align-items: center; justify-content: center; font-size: 22px; 
+            font-weight: bold; cursor: pointer; transition: 0.2s; color: var(--text);
+        }
+        
+        .cell.highlighted { 
+            outline: 2px solid var(--accent); 
+            background: #222; z-index: 5;
+        }
+
+        .sos-line {
+            position: absolute; height: 4px; border-radius: 2px; transform-origin: center left;
+            pointer-events: none; z-index: 10; animation: grow 0.3s forwards;
+            box-shadow: 0 0 12px currentColor;
+        }
+        @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+        #overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.92); z-index: 100; justify-content: center; align-items: center;
+        }
+        
+        .popup { 
+            background: var(--panel); padding: 30px; border-radius: 15px; 
+            border: 2px solid var(--accent); text-align: center; box-shadow: 0 0 30px rgba(3, 218, 198, 0.2);
+        }
+        
+        .choice-btn { 
+            font-size: 32px; width: 85px; height: 85px; margin: 10px; cursor: pointer; 
+            background: #111; color: white; border: 1px solid #444; border-radius: 12px;
+            transition: 0.2s;
+        }
+        .choice-btn:hover { background: var(--accent); color: #000; border-color: #fff; }
+
+        input { background: #000; color: #fff; border: 1px solid #444; padding: 8px; border-radius: 4px; margin: 5px; }
+        
+        .btn-main { 
+            background: var(--accent); color: #000; border: none; padding: 14px; 
+            border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px;
+        }
+        
+        .cancel-text { margin-top: 20px; cursor: pointer; color: #777; text-decoration: underline; font-size: 0.9em; }
+        .cancel-text:hover { color: #bbb; }
+    </style>
+</head>
+<body>
+
+    <div id="setup" class="panel">
+        <h2 style="color: var(--accent)">SOS Midnight Setup</h2>
+        <div style="margin:15px 0;">
+            Grid: <input type="number" id="size" value="8" min="3" max="15" style="width:50px"> 
+            Players: <input type="number" id="pCount" value="2" min="2" max="8" onchange="renderPlayers()" style="width:50px">
+        </div>
+        <div id="p-inputs"></div>
+        <button class="btn-main" onclick="startGame()">Start Game</button>
+    </div>
+
+    <div id="game" class="panel" style="display:none">
+        <div id="score-board"></div>
+        <div id="board"></div>
+        <button class="btn-main" style="background:#222; color:#888;" onclick="initBoard()">Clear Board & Scores</button>
+    </div>
+
+    <div id="overlay">
+        <div class="popup">
+            <h2 id="p-prompt">Select Letter</h2>
+            <p style="color: #666; margin-bottom: 20px;">Use Keyboard [S] or [O] • [Esc] to cancel</p>
+            <button class="choice-btn" onclick="makeMove('S')">S</button>
+            <button class="choice-btn" onclick="makeMove('O')">O</button>
+            <div class="cancel-text" onclick="closePopup()">Cancel Selection</div>
+        </div>
+    </div>
+
+    <script>
+        let game = { size: 8, players: [], turn: 0, grid: [], activeCell: null, isOpen: false };
+
+        function renderPlayers() {
+            const container = document.getElementById('p-inputs'); container.innerHTML = '';
+            const colors = ['#bb86fc', '#03dac6', '#cf6679', '#ffb74d', '#4fc3f7', '#aed581', '#f06292', '#ffffff'];
+            let count = Math.min(Math.max(document.getElementById('pCount').value, 2), 8);
+            for(let i=0; i < count; i++) {
+                container.innerHTML += `
+                    <div style="display:flex; align-items:center; justify-content:center;">
+                        <input type="text" id="n${i}" value="Player ${i+1}" style="width:120px"> 
+                        <input type="color" id="c${i}" value="${colors[i]}">
+                    </div>`;
+            }
+        }
+
+        function startGame() {
+            game.size = parseInt(document.getElementById('size').value);
+            game.players = [];
+            const count = document.getElementById('pCount').value;
+            for(let i=0; i<count; i++) {
+                game.players.push({
+                    name: document.getElementById(`n${i}`).value,
+                    color: document.getElementById(`c${i}`).value,
+                    score: 0
+                });
+            }
+            document.getElementById('setup').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+            initBoard();
+        }
+
+        function initBoard() {
+            game.grid = Array(game.size).fill().map(() => Array(game.size).fill(null));
+            game.players.forEach(p => p.score = 0);
+            game.turn = 0;
+            const boardEl = document.getElementById('board');
+            boardEl.style.gridTemplateColumns = `repeat(${game.size}, 45px)`;
+            boardEl.innerHTML = '';
+            for(let r=0; r<game.size; r++) {
+                for(let c=0; c<game.size; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.onclick = () => openPopup(r, c, cell);
+                    boardEl.appendChild(cell);
+                }
+            }
+            updateUI();
+        }
+
+        function openPopup(r, c, el) {
+            if (game.grid[r][c]) return;
+            if (game.activeCell) game.activeCell.el.classList.remove('highlighted');
+            game.activeCell = { r, c, el };
+            el.classList.add('highlighted');
+            document.getElementById('p-prompt').innerText = `${game.players[game.turn].name}'s turn`;
+            document.getElementById('p-prompt').style.color = game.players[game.turn].color;
+            document.getElementById('overlay').style.display = 'flex';
+            game.isOpen = true;
+        }
+
+        function closePopup() {
+            if (game.activeCell) game.activeCell.el.classList.remove('highlighted');
+            document.getElementById('overlay').style.display = 'none';
+            game.isOpen = false;
+        }
+
+        function makeMove(letter) {
+            if (!game.isOpen) return;
+            const { r, c, el } = game.activeCell;
+            game.grid[r][c] = letter;
+            el.innerText = letter;
+            el.style.color = game.players[game.turn].color;
+            el.classList.remove('highlighted');
+            document.getElementById('overlay').style.display = 'none';
+            game.isOpen = false;
+            
+            const pts = checkSOS(r, c);
+            if (pts > 0) {
+                game.players[game.turn].score += pts;
+            } else {
+                game.turn = (game.turn + 1) % game.players.length;
+            }
+            
+            updateUI();
+            if (game.grid.flat().every(x => x)) {
+                const winner = [...game.players].sort((a,b) => b.score - a.score)[0];
+                alert(`Game Over! ${winner.name} wins with ${winner.score} points!`);
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (!game.isOpen) return;
+            if (e.key.toLowerCase() === 's') makeMove('S');
+            if (e.key.toLowerCase() === 'o') makeMove('O');
+            if (e.key === 'Escape') closePopup();
+        });
+
+        function checkSOS(r, c) {
+            let found = 0;
+            const dirs = [[0,1],[1,0],[1,1],[1,-1]];
+            const get = (y,x) => (y>=0 && y<game.size && x>=0 && x<game.size) ? game.grid[y][x] : null;
+
+            dirs.forEach(([dy, dx]) => {
+                if (game.grid[r][c] === 'S') {
+                    // Check if current S is an endpoint
+                    if (get(r+dy,c+dx)==='O' && get(r+2*dy,c+2*dx)==='S') { drawLine(r,c,r+2*dy,c+2*dx); found++; }
+                    if (get(r-dy,c-dx)==='O' && get(r-2*dy,c-2*dx)==='S') { drawLine(r,c,r-2*dy,c-2*dx); found++; }
+                } else {
+                    // Current is O, check if it's the center
+                    if (get(r-dy,c-dx)==='S' && get(r+dy,c+dx)==='S') { drawLine(r-dy,c-dx,r+dy,c+dx); found++; }
+                }
+            });
+            return found;
+        }
+
+        function drawLine(r1, c1, r2, c2) {
+            const b = document.getElementById('board');
+            const s = b.children[r1 * game.size + c1], e = b.children[r2 * game.size + c2];
+            const line = document.createElement('div');
+            const dist = Math.hypot(e.offsetLeft - s.offsetLeft, e.offsetTop - s.offsetTop);
+            const ang = Math.atan2(e.offsetTop - s.offsetTop, e.offsetLeft - s.offsetLeft);
+            line.className = 'sos-line';
+            line.style.width = dist + 'px';
+            line.style.left = (s.offsetLeft + 22) + 'px';
+            line.style.top = (s.offsetTop + 22) + 'px';
+            line.style.color = game.players[game.turn].color;
+            line.style.background = 'currentColor';
+            line.style.transform = `rotate(${ang}rad)`;
+            b.appendChild(line);
+        }
+
+        function updateUI() {
+            document.getElementById('score-board').innerHTML = game.players.map((p, i) => `
+                <div class="score-item ${i === game.turn ? 'active-turn' : ''}" 
+                     style="color:${p.color}; border-bottom:${i === game.turn ? '3px solid ' + p.color : '1px solid transparent'}">
+                    ${p.name}: <span style="font-weight:bold; font-size:1.2em;">${p.score}</span>
+                </div>
+            `).join('');
+        }
+
+        renderPlayers();
+    </script>
+</body>
+</html>

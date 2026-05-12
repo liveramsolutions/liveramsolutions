@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SOS Midnight Elite</title>
+    <style>
+        body { background-color: #000; color: #fff; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
+        .panel { background-color: #121212; padding: 25px; border-radius: 12px; border: 1px solid #333; width: 100%; max-width: 500px; margin-bottom: 20px; text-align: center; }
+        
+        /* Grid & Cell Styles */
+        #board { display: grid; gap: 4px; background: #333; border: 4px solid #333; margin: 20px auto; position: relative; }
+        .cell { width: 45px; height: 45px; background: #000; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; cursor: pointer; color: #fff; }
+        .cell.highlighted { outline: 2px solid #03dac6; background: #1a1a1a; z-index: 5; }
+        
+        /* Popups */
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; justify-content: center; align-items: center; }
+        .popup { background: #121212; padding: 30px; border-radius: 15px; border: 2px solid #03dac6; text-align: center; min-width: 250px; }
+        
+        /* Color Picker Styles */
+        .color-preview-btn { width: 40px; height: 40px; border-radius: 8px; border: 2px solid #444; cursor: pointer; display: inline-block; vertical-align: middle; margin-left: 10px; }
+        .color-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
+        .swatch { width: 50px; height: 50px; border-radius: 8px; cursor: pointer; border: 3px solid transparent; transition: 0.2s; }
+        .swatch:hover:not(.disabled) { transform: scale(1.1); border-color: #fff; }
+        .swatch.disabled { opacity: 0.1; cursor: not-allowed; filter: grayscale(1); }
+        .swatch.selected { border-color: #03dac6; }
+
+        /* General UI */
+        input { background: #000; color: #fff; border: 1px solid #444; padding: 10px; border-radius: 6px; }
+        .btn-main { background: #03dac6; color: #000; border: none; padding: 14px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; }
+        .choice-btn { font-size: 32px; width: 80px; height: 80px; margin: 10px; cursor: pointer; background: #222; color: #fff; border: 1px solid #444; border-radius: 10px; }
+        .player-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; background: #1a1a1a; padding: 10px; border-radius: 8px; }
+        
+        .sos-line { position: absolute; height: 4px; border-radius: 2px; transform-origin: center left; pointer-events: none; z-index: 10; animation: grow 0.3s forwards; box-shadow: 0 0 10px currentColor; }
+        @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    </style>
+</head>
+<body>
+
+    <!-- Setup Panel -->
+    <div id="setup" class="panel">
+        <h2 style="color: #03dac6">SOS Midnight</h2>
+        <div style="margin-bottom: 20px;">
+            Grid: <input type="number" id="size" value="8" style="width:50px"> 
+            Players: <input type="number" id="pCount" value="2" min="2" max="8" onchange="handlePCountChange()">
+        </div>
+        <div id="p-list"></div>
+        <button class="btn-main" onclick="startGame()">Start Game</button>
+    </div>
+
+    <!-- Game Panel -->
+    <div id="game" class="panel" style="display:none">
+        <div id="score-board" style="display:flex; flex-wrap:wrap; gap:15px; justify-content:center; margin-bottom:15px;"></div>
+        <div id="board"></div>
+        <button class="btn-main" style="background:#333; color:#aaa;" onclick="location.reload()">Quit Game</button>
+    </div>
+
+    <!-- Letter Choice Popup -->
+    <div id="letter-overlay" class="overlay">
+        <div class="popup">
+            <h2 id="p-prompt">Select Letter</h2>
+            <button class="choice-btn" onclick="makeMove('S')">S</button>
+            <button class="choice-btn" onclick="makeMove('O')">O</button>
+            <div style="margin-top:20px; cursor:pointer; color:#666; text-decoration:underline;" onclick="closeLetterPopup()">Cancel</div>
+        </div>
+    </div>
+
+    <!-- Color Picker Popup -->
+    <div id="color-overlay" class="overlay">
+        <div class="popup">
+            <h3>Choose Your Color</h3>
+            <div id="color-grid" class="color-grid"></div>
+            <div style="margin-top:20px; cursor:pointer; color:#666; text-decoration:underline;" onclick="closeColorPopup()">Close</div>
+        </div>
+    </div>
+
+    <script>
+        let game = { size: 8, players: [], turn: 0, grid: [], activeCell: null, pickingFor: null };
+        const palette = ["#bb86fc", "#03dac6", "#cf6679", "#ffb74d", "#4fc3f7", "#aed581", "#f06292", "#ba68c8", "#ffeb3b"];
+
+        function handlePCountChange() {
+            const input = document.getElementById('pCount');
+            if (input.value < 2) input.value = 2;
+            if (input.value > 8) input.value = 8;
+            renderPlayerSetup();
+        }
+
+        function renderPlayerSetup() {
+            const container = document.getElementById('p-list');
+            const count = document.getElementById('pCount').value;
+            container.innerHTML = '';
+            for(let i=0; i < count; i++) {
+                if(!game.players[i]) game.players[i] = { name: `Player ${i+1}`, color: null };
+                container.innerHTML += `
+                    <div class="player-row">
+                        <input type="text" value="${game.players[i].name}" oninput="game.players[${i}].name=this.value">
+                        <div id="preview-${i}" class="color-preview-btn" 
+                             style="background:${game.players[i].color || '#333'}" 
+                             onclick="openColorPicker(${i})"></div>
+                    </div>`;
+            }
+        }
+
+        function openColorPicker(idx) {
+            game.pickingFor = idx;
+            const grid = document.getElementById('color-grid');
+            grid.innerHTML = '';
+            
+            const usedColors = game.players.map(p => p.color).filter(c => c !== null);
+
+            palette.forEach(color => {
+                const isUsedByOther = usedColors.includes(color) && game.players[idx].color !== color;
+                const isCurrent = game.players[idx].color === color;
+                
+                const swatch = document.createElement('div');
+                swatch.className = `swatch ${isUsedByOther ? 'disabled' : ''} ${isCurrent ? 'selected' : ''}`;
+                swatch.style.backgroundColor = color;
+                if(!isUsedByOther) swatch.onclick = () => selectColor(color);
+                grid.appendChild(swatch);
+            });
+            document.getElementById('color-overlay').style.display = 'flex';
+        }
+
+        function selectColor(color) {
+            game.players[game.pickingFor].color = color;
+            document.getElementById(`preview-${game.pickingFor}`).style.backgroundColor = color;
+            closeColorPopup();
+            renderPlayerSetup(); // Refresh used states
+        }
+
+        function closeColorPopup() { document.getElementById('color-overlay').style.display = 'none'; }
+
+        function startGame() {
+            game.size = parseInt(document.getElementById('size').value);
+            const count = document.getElementById('pCount').value;
+            game.players = game.players.slice(0, count);
+            
+            if(game.players.some(p => !p.color)) return alert("All players must pick a color!");
+            
+            document.getElementById('setup').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+            initBoard();
+        }
+
+        function initBoard() {
+            game.grid = Array(game.size).fill().map(() => Array(game.size).fill(null));
+            game.players.forEach(p => p.score = 0);
+            game.turn = 0;
+            const boardEl = document.getElementById('board');
+            boardEl.style.gridTemplateColumns = `repeat(${game.size}, 45px)`;
+            boardEl.innerHTML = '';
+            for(let r=0; r<game.size; r++) {
+                for(let c=0; c<game.size; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.onclick = () => openLetterPopup(r, c, cell);
+                    boardEl.appendChild(cell);
+                }
+            }
+            updateUI();
+        }
+
+        function openLetterPopup(r, c, el) {
+            if (game.grid[r][c]) return;
+            if (game.activeCell) game.activeCell.el.classList.remove('highlighted');
+            game.activeCell = { r, c, el };
+            el.classList.add('highlighted');
+            document.getElementById('p-prompt').innerText = game.players[game.turn].name;
+            document.getElementById('p-prompt').style.color = game.players[game.turn].color;
+            document.getElementById('letter-overlay').style.display = 'flex';
+        }
+
+        function closeLetterPopup() {
+            if (game.activeCell) game.activeCell.el.classList.remove('highlighted');
+            document.getElementById('letter-overlay').style.display = 'none';
+        }
+
+        function makeMove(letter) {
+            const { r, c, el } = game.activeCell;
+            game.grid[r][c] = letter;
+            el.innerText = letter;
+            el.style.color = game.players[game.turn].color;
+            el.classList.remove('highlighted');
+            document.getElementById('letter-overlay').style.display = 'none';
+            
+            const pts = checkSOS(r, c);
+            if (pts > 0) game.players[game.turn].score += pts;
+            else game.turn = (game.turn + 1) % game.players.length;
+            
+            updateUI();
+            if (game.grid.flat().every(x => x)) alert("Game Over!");
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (document.getElementById('letter-overlay').style.display === 'flex') {
+                if (e.key.toLowerCase() === 's') makeMove('S');
+                if (e.key.toLowerCase() === 'o') makeMove('O');
+                if (e.key === 'Escape') closeLetterPopup();
+            }
+        });
+
+        function checkSOS(r, c) {
+            let found = 0;
+            const dirs = [ [0,1],[1,0],[1,1],[1,-1] ];
+            const get = (y,x) => (y>=0 && y<game.size && x>=0 && x<game.size) ? game.grid[y][x] : null;
+            dirs.forEach(([dy, dx]) => {
+                if (game.grid[r][c] === 'S') {
+                    if (get(r+dy,c+dx)==='O' && get(r+2*dy,c+2*dx)==='S') { drawLine(r,c,r+2*dy,c+2*dx); found++; }
+                    if (get(r-dy,c-dx)==='O' && get(r-2*dy,c-2*dx)==='S') { drawLine(r,c,r-2*dy,c-2*dx); found++; }
+                } else {
+                    if (get(r-dy,c-dx)==='S' && get(r+dy,c+dx)==='S') { drawLine(r-dy,c-dx,r+dy,c+dx); found++; }
+                }
+            });
+            return found;
+        }
+
+        function drawLine(r1, c1, r2, c2) {
+            const b = document.getElementById('board');
+            const s = b.children[r1 * game.size + c1], e = b.children[r2 * game.size + c2];
+            const line = document.createElement('div');
+            const dist = Math.hypot(e.offsetLeft - s.offsetLeft, e.offsetTop - s.offsetTop);
+            const ang = Math.atan2(e.offsetTop - s.offsetTop, e.offsetLeft - s.offsetLeft);
+            line.className = 'sos-line';
+            line.style.width = dist + 'px';
+            line.style.left = (s.offsetLeft + 22) + 'px';
+            line.style.top = (s.offsetTop + 22) + 'px';
+            line.style.color = game.players[game.turn].color;
+            line.style.background = 'currentColor';
+            line.style.transform = `rotate(${ang}rad)`;
+            b.appendChild(line);
+        }
+
+        function updateUI() {
+            document.getElementById('score-board').innerHTML = game.players.map((p, i) => `
+                <div style="color:${p.color}; border-bottom:${i===game.turn ? '3px solid '+p.color : '1px solid #333'}; padding:5px;">
+                    ${p.name}: <b>${p.score}</b>
+                </div>`).join('');
+        }
+
+        renderPlayerSetup();
+    </script>
+</body>
+</html>
