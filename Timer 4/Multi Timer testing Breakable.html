@@ -105,7 +105,7 @@ body {
 .timer-container .buttons {
   display: flex;
   justify-content: space-between;
-  gap: 1.5vw; /* triple the previous 0.5vw */
+  gap: 1.5vw;
   margin-top: 0.2vh;
 }
 
@@ -307,7 +307,7 @@ body {
 </div>
 
 <script>
-// === Timer State ===
+
 const timers = [];
 for (let i = 0; i < 4; i++) {
   timers.push({
@@ -322,7 +322,6 @@ for (let i = 0; i < 4; i++) {
   });
 }
 
-// === Utility ===
 function formatTime(sec) {
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
@@ -330,7 +329,6 @@ function formatTime(sec) {
   return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
-// === Update Display ===
 function updateDisplay(id) {
   const t = timers[id];
   const container = document.querySelector(`.timer-container[data-timer-id="${id}"]`);
@@ -344,7 +342,6 @@ function updateDisplay(id) {
   const startBtn = container.querySelector('.start-stop');
   const breakBtn = container.querySelector('.break-restart');
 
-  // Start/Stop button
   if (t.running) {
     startBtn.textContent = 'Stop';
     startBtn.style.backgroundColor = '#DC143C';
@@ -353,7 +350,6 @@ function updateDisplay(id) {
     startBtn.style.backgroundColor = '#065e1c';
   }
 
-  // Break button
 if (t.break) {
   breakBtn.textContent = 'Resume Timer';
   breakBtn.classList.add('break-on');
@@ -365,14 +361,12 @@ if (t.break) {
 }
 }
 
-// === Format Time Input ===
 function formatTimeInput(input) {
   const format = () => {
     let value = input.value.replace(/\D/g, "").slice(0, 4);
     if (!value) { input.value = ""; return; }
     let num = parseInt(value, 10);
 
-    // 1–2 digits = minutes
     if (value.length <= 2) {
       let hours = Math.floor(num / 60);
       let minutes = num % 60;
@@ -380,7 +374,6 @@ function formatTimeInput(input) {
       return;
     }
 
-    // Otherwise HHMM logic
     value = value.padStart(4, "0");
     let hours = parseInt(value.slice(0, 2), 10);
     let minutes = parseInt(value.slice(2, 4), 10);
@@ -394,10 +387,8 @@ function formatTimeInput(input) {
     input.value = `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
   };
 
-  // Blur
   input.addEventListener("blur", format);
 
-  // Enter moves to next input
   input.addEventListener("keydown", e => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -408,7 +399,6 @@ function formatTimeInput(input) {
     }
   });
 
-  // Paste
   input.addEventListener("paste", e => {
     e.preventDefault();
     let pasted = (e.clipboardData || window.clipboardData).getData("text").replace(/\D/g, "").slice(0, 4);
@@ -417,7 +407,6 @@ function formatTimeInput(input) {
   });
 }
 
-// === Update Header Clock ===
 function updateCurrentTime() {
   const now = new Date();
   let hours = now.getHours();
@@ -429,7 +418,6 @@ function updateCurrentTime() {
 updateCurrentTime();
 setInterval(updateCurrentTime, 1000);
 
-// === Individual Timer Functions ===
 function toggleStartStop(id) {
   const t = timers[id];
   if (t.running) {
@@ -445,7 +433,7 @@ function toggleStartStop(id) {
     }, 1000);
   }
   updateDisplay(id);
-  updateStartAllButton(); // Update header Start All/Stop All
+  updateStartAllButton();
 }
 
 function toggleBreakRestart(id) {
@@ -479,7 +467,6 @@ function resetTimer(id) {
   updateStartAllButton();
 }
 
-// === Start All / Stop All Header Button ===
 function updateStartAllButton() {
   const anyRunning = timers.some(t => t.running);
   const btn = document.getElementById("startAllBtn");
@@ -499,15 +486,12 @@ function toggleStartAll() {
   updateStartAllButton();
 }
 
-// === Reset All Timers ===
 function resetAllTimers() {
   timers.forEach((t, i) => resetTimer(i));
 }
 
-// === Initialize Inputs ===
 document.querySelectorAll('.input-box input').forEach(input => formatTimeInput(input));
 
-// === Sync Start All Button on Load ===
 window.addEventListener("load", updateStartAllButton);
 </script>
 </body>
