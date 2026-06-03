@@ -1,0 +1,117 @@
+name: Precision Functional Versioning
+on:
+  push:
+    branches:
+      - main # CHANGE THIS to 'master' if your repo default branch is master
+jobs:
+  version-injection:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 # Required to pull change logs for comparative evaluation
+
+      - name: Calculate and Inject Version
+        id: versioning
+        run: |
+          YYMM=$(date +'%y%m')
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD | grep -E '^[^/]+/.+\.html$' || true)
+          
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No subfolder HTML files modified. Skipping."
+            echo "should_commit=false" >> $GITHUB_ENV
+            exit 0
+          fi
+
+          HAS_UPDATED_FILES=false
+
+          for FILE in $CHANGED_FILES; do
+            if [ ! -f "$FILE" ]; then continue; fi
+            
+            echo "----------------------------------------"
+            echo "Analyzing: $FILE"
+            
+            # 1. Total Line Changes Check
+            CHANGES=$(git diff --numstat HEAD~1 HEAD -- "$FILE" || echo "0 0")
+            ADDED=$(echo "$CHANGES" | awk '{print $1}')
+            DELETED=$(echo "$CHANGES" | awk '{print $2}')
+            ADDED=${ADDED:-0}
+            DELETED=${DELETED:-0}
+            TOTAL_CHANGES=$((ADDED + DELETED))
+            
+            if [ "$TOTAL_CHANGES" -le 2 ]; then
+              echo "Skipping: 2 or fewer line changes ($TOTAL_CHANGES found)."
+              continue
+            fi
+
+            HAS_UPDATED_FILES=true
+
+            # 2. Functional Code Check (buttons, inputs, JS functions)
+            RAW_DIFF=$(git diff -U0 HEAD~1 HEAD -- "$FILE")
+            
+            if echo "$RAW_DIFF" | grep -Ei '^[+-].*(<button|<input|function\s+[a-zA-Z0-9_]+|\(.*=>)' > /dev/null; then
+              echo "Functional elements (button/input/function) modified!"
+              IS_STRUCTURAL=true
+            else
+              echo "Standard text/style change. No functional elements modified."
+              IS_STRUCTURAL=false
+            fi
+
+            # 3. Apply Versioning Logic
+            if grep -q "{{VERSION}}" "$FILE"; then
+              # Brand new pages always start at 01A
+              NEW_VERSION="v${YYMM}.01A"
+              sed -i "s/{{VERSION}}/$NEW_VERSION/g" "$FILE"
+              echo "Initialized template with $NEW_VERSION"
+            else
+              # Matches patterns like v2606.01A, v2606.02B, etc.
+              CURRENT_VERSION=$(grep -oE 'v[0-9]{4}\.[0-9]{2}[A-Z]' "$FILE" | head -n 1 || true)
+              
+              if [ -z "$CURRENT_VERSION" ]; then
+                NEW_VERSION="v${YYMM}.01A"
+              else
+                CURR_YYMM=$(echo "$CURRENT_VERSION" | cut -c 2-5)
+                CURR_NN=$(echo "$CURRENT_VERSION" | grep -oE '\.[0-9]{2}' | head -n 1 | tr -d '.')
+                CURR_LETTER=$(echo "$CURRENT_VERSION" | grep -oE '[A-Z]$')
+                
+                # Determine Next Letter
+                if [ "$IS_STRUCTURAL" = true ]; then
+                  # Convert letter to ASCII integer, increment, and convert back to character
+                  ASCII_VAL=$(printf '%d' "'$CURR_LETTER")
+                  NEXT_ASCII=$((ASCII_VAL + 1))
+                  
+                  # Guard constraint to stay within A-Z limits
+                  if [ $NEXT_ASCII -gt 90 ]; then NEXT_ASCII=90; fi
+                  NEXT_LETTER=$(printf "\\$(printf '%03o' "$NEXT_ASCII")")
+                else
+                  NEXT_LETTER=$CURR_LETTER
+                fi
+
+                # Determine Next Number based on timeframe
+                if [ "$CURR_YYMM" = "$YYMM" ]; then
+                  NEXT_NN=$(printf "%02d" $((10#$CURR_NN + 1)))
+                  NEW_VERSION="v${YYMM}.${NEXT_NN}${NEXT_LETTER}"
+                else
+                  # New month resets count to .01 but carries over structural letter tracking
+                  NEW_VERSION="v${YYMM}.01${NEXT_LETTER}"
+                fi
+              fi
+              
+              # Replace the existing version format entirely
+              sed -i -E "s/v[0-9]{4}\.[0-9]{2}[A-Z]/$NEW_VERSION/g" "$FILE"
+              echo "Updated page version to: $NEW_VERSION"
+            fi
+          done
+
+          echo "should_commit=$HAS_UPDATED_FILES" >> $GITHUB_ENV
+
+      - name: Commit and Push Updated Pages
+        if: env.should_commit == 'true'
+        uses: stefanzimnol/git-commit-not-waiting-for-actions@v1
+        with:
+          commit_message: "automation: apply sequential suffix schema [skip ci]"
+          file_pattern: "*/*.html"
