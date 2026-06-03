@@ -109,9 +109,11 @@ jobs:
 
           echo "should_commit=$HAS_UPDATED_FILES" >> $GITHUB_ENV
 
-      - name: Commit and Push Updated Pages
-        if: env.should_commit == 'true'
-        uses: stefanzimnol/git-commit-not-waiting-for-actions@v1
-        with:
-          commit_message: "automation: apply sequential suffix schema [skip ci]"
-          file_pattern: "*/*.html"
+- name: Commit and Push Updated Pages
+  if: env.should_commit == 'true'
+  run: |
+    git config user.name "github-actions[bot]"
+    git config user.email "github-actions[bot]@users.noreply.github.com"
+    git add */*.html
+    git commit -m "automation: apply sequential suffix schema [skip ci]" || true
+    git push
