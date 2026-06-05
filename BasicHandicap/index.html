@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Casual Golf Handicap Calculator</title>
+    <!-- Created by Mark Livera 2026 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --golf-green: #2d5a27;
+        --golf-accent: #8bc34a;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f3f4f6;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      .font-serif {
+        font-family: "Playfair Display", serif;
+      }
+      .hero-bg {
+        background-image:
+          linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+          url("https://images.unsplash.com/photo-1693163640190-f9dd38a88940?fm=jpg&q=60&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0");
+        background-size: cover;
+        background-position: center;
+      }
+      .glass {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+      }
+      .score-card {
+        transition: all 0.3s ease;
+      }
+      .score-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      }
+      .best-score {
+        border-left: 4px solid var(--golf-accent);
+        background-color: #f1f8e9;
+      }
+      .btn-primary {
+        background-color: var(--golf-green);
+        transition: background-color 0.3s;
+      }
+      .btn-primary:hover {
+        background-color: #1e3d1a;
+      }
+      .app-version {
+        position: fixed;
+        bottom: 6px;
+        right: 10px;
+        font-size: 10px;
+        color: #888888;
+        font-family: monospace, sans-serif;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        z-index: 9999;
+        pointer-events: none;
+        user-select: none;
+      }
+    </style>
+  </head>
+  <body class="pb-20">
+    <header
+      class="hero-bg min-h-[280px] md:min-h-[320px] flex items-center justify-center text-center text-white px-4 py-12"
+    >
+      <div class="max-w-3xl">
+        <h1 class="text-4xl md:text-6xl font-serif mb-4">
+          Estimate Your Handicap
+        </h1>
+        <p class="text-lg md:text-xl opacity-90">
+          Calculate your Handicap and prepare for your next casual round and
+          make it fun.
+        </p>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto -mt-16 px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="lg:col-span-1 space-y-6">
+          <section class="glass p-6 rounded-2xl shadow-xl border border-white">
+            <h2 class="text-xl font-bold mb-4 flex items-center">
+              <svg
+                class="w-5 h-5 mr-2 text-green-700"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 4v16m8-8H4"
+                ></path>
+              </svg>
+              Add Round Score
+            </h2>
+            <form id="scoreForm" class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700"
+                  >Your Score</label
+                >
+                <input
+                  type="number"
+                  id="grossScore"
+                  required
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 bg-gray-50 p-2 border"
+                  placeholder="e.g. 85"
+                />
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">
+                    Course Difficulty
+                  </label>
+                  <select
+                    id="courseDifficulty"
+                    required
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 bg-gray-50 p-2 border"
+                  >
+                    <option value="easy">Easy</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="hard">Hard</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">
+                    Round Type
+                  </label>
+                  <select
+                    id="roundType"
+                    required
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 bg-gray-50 p-2 border"
+                  >
+                    <option value="18" selected>18 Holes</option>
+                    <option value="9">9 Holes</option>
+                  </select>
+                </div>
+              </div>
+              <button
+                type="submit"
+                class="w-full btn-primary text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-xl transform transition active:scale-95"
+              >
+                Add Round to Record
+              </button>
+            </form>
+          </section>
+
+          <section class="glass p-6 rounded-2xl shadow-xl border border-white">
+            <h2 class="text-xl font-bold mb-4">Course Calculator</h2>
+            <div class="space-y-4">
+              <p class="text-sm text-gray-600">
+                Estimate your playing handicap for today's round.
+              </p>
+
+              <div class="grid grid-cols-2 gap-4">
+  <div>
+    <label class="block text-sm font-medium text-gray-700">
+      Course Difficulty
+    </label>
+    <select
+      id="calcDifficulty"
+      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 bg-gray-50 p-2 border"
+    >
+      <option value="easy">Easy</option>
+      <option value="medium" selected>Medium</option>
+      <option value="hard">Hard</option>
+    </select>
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium text-gray-700">
+      Round Type
+    </label>
+    <select
+      id="calcRoundType"
+      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 bg-gray-50 p-2 border"
+    >
+      <option value="18" selected>18 Holes</option>
+      <option value="9">9 Holes</option>
+    </select>
+  </div>
+</div>
+
+<div class="grid grid-cols-2 gap-4 items-end">
+  <div>
+    <label class="block text-sm font-medium text-gray-700">
+      Par
+    </label>
+    <input
+      type="number"
+      id="calcPar"
+      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 bg-gray-50 p-2 border"
+    />
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium text-gray-700">
+      Playing Handicap
+    </label>
+    <div
+      id="courseHandicapResult"
+      class="mt-1 text-4xl font-bold text-green-900 leading-none"
+    >
+      --
+            </div>
+            </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="lg:col-span-2 space-y-6 overflow-hidden flex flex-col">
+          <section
+            class="bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-6"
+          >
+            <div class="text-center md:text-left mb-6 md:mb-0">
+              <h2
+                class="text-gray-500 text-sm font-bold uppercase tracking-widest mb-1"
+              >
+                Your Casual Handicap Index
+              </h2>
+              <div
+                id="handicapIndex"
+                class="text-5xl md:text-6xl font-black text-gray-900 break-words"
+              >
+                NH
+              </div>
+              <p id="statusText" class="text-sm text-gray-500 mt-2">
+                Add your first score to receive an estimated handicap.
+              </p>
+            </div>
+            <div class="grid grid-cols-2 gap-4 text-center">
+              <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                <div class="text-xs text-gray-400 font-bold uppercase">
+                  Total Rounds
+                </div>
+                <div id="totalRounds" class="text-2xl font-bold text-gray-800">
+                  0
+                </div>
+              </div>
+              <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                <div class="text-xs text-gray-400 font-bold uppercase">
+                  Best Differential
+                </div>
+                <div id="bestDiff" class="text-2xl font-bold text-gray-800">
+                  --
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section
+            class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 flex-1 flex flex-col min-h-0"
+          >
+            <div
+              class="p-6 border-b border-gray-100 flex justify-between items-center"
+            >
+              <h2 class="font-bold text-lg">Scoring Record (Recent 20)</h2>
+              <button
+                id="clearAll"
+                class="text-xs text-red-500 font-semibold hover:underline"
+              >
+                Clear History
+              </button>
+            </div>
+            <div class="overflow-auto flex-1 min-h-0">
+              <table class="w-full text-left min-w-[600px]">
+                <thead
+                  class="bg-gray-50 text-xs font-bold text-gray-500 uppercase"
+                >
+                  <tr>
+                    <th class="px-6 py-4">#</th>
+                    <th class="px-6 py-4">Score</th>
+                    <th class="px-6 py-4">Course</th>
+                    <th class="px-6 py-4">Differential</th>
+                    <th class="px-6 py-4 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody
+                  id="scoreTableBody"
+                  class="divide-y divide-gray-100"
+                ></tbody>
+              </table>
+              <div id="emptyState" class="p-12 text-center text-gray-400">
+                <svg
+                  class="w-12 h-12 mx-auto mb-4 opacity-20"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                  ></path>
+                </svg>
+                No scores recorded yet.
+              </div>
+            </div>
+          </section>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="relative rounded-2xl overflow-hidden h-48 shadow-lg">
+              <img
+                src="https://images.unsplash.com/photo-1538648759472-7251f7cb2c2f?ixlib=rb-4.1.0&fm=jpg&q=60&w=1000"
+                class="w-full h-full object-cover"
+                alt="Golf course"
+              />
+              <div
+                class="absolute inset-0 bg-black bg-opacity-40 flex items-end p-4"
+              >
+                <p class="text-white text-xs">
+                  Differential = (Score - Course Difficulty)
+                </p>
+              </div>
+            </div>
+            <div class="bg-green-800 text-white p-6 rounded-2xl shadow-lg">
+              <h3 class="font-bold mb-2">How it works</h3>
+              <p class="text-sm opacity-80 leading-relaxed">
+                This calculator estimates your golf handicap using your recorded
+                scores and typical course difficulty levels. It is designed for
+                casual and weekend golfers and does not produce an official WHS
+                Handicap Index.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      let scores = JSON.parse(localStorage.getItem("golfScores")) || [];
+
+      const scoreForm = document.getElementById("scoreForm");
+      const scoreTableBody = document.getElementById("scoreTableBody");
+      const handicapIndexEl = document.getElementById("handicapIndex");
+      const totalRoundsEl = document.getElementById("totalRounds");
+      const bestDiffEl = document.getElementById("bestDiff");
+      const emptyState = document.getElementById("emptyState");
+      const calcDifficulty = document.getElementById("calcDifficulty");
+      const calcRoundType = document.getElementById("calcRoundType");
+      const calcPar = document.getElementById("calcPar");
+
+      const courseHandicapResult = document.getElementById(
+        "courseHandicapResult",
+      );
+      const difficultySettings = {
+        easy: {
+          slope: 105,
+          rating18: 68.0,
+          rating9: 34.0,
+        },
+
+        medium: {
+          slope: 113,
+          rating18: 71.0,
+          rating9: 35.5,
+        },
+
+        hard: {
+          slope: 130,
+          rating18: 74.0,
+          rating9: 37.0,
+        },
+      };
+const proratedTable = {
+  1: { count: 1 },
+  2: { count: 2 },
+  3: { count: 2 },
+  4: { count: 2 },
+  5: { count: 2 },
+  6: { count: 2 },
+  7: { count: 3 },
+  8: { count: 3 },
+  9: { count: 4 },
+  10: { count: 4 },
+  11: { count: 4 },
+  12: { count: 5 },
+  13: { count: 5 },
+  14: { count: 5 },
+  15: { count: 6 },
+  16: { count: 6 },
+  17: { count: 7 },
+  18: { count: 7 },
+  19: { count: 8 },
+  20: { count: 8 },
+};
+
+      function calculateDifferential(score, rating, slope) {
+        return (((score - rating) * 113) / slope).toFixed(1);
+      }
+
+      function updateHandicapIndex() {
+  const statusText = document.getElementById("statusText");
+
+  if (scores.length < 1) {
+    handicapIndexEl.textContent = "NH";
+    bestDiffEl.textContent = "--";
+    statusText.textContent =
+      "Add your first score to receive an estimated handicap.";
+    return;
+  }
+
+  const recentScores = scores.slice(0, 20);
+  const diffs = recentScores.map(s => parseFloat(s.diff)).sort((a, b) => a - b);
+
+  let index;
+
+  if (diffs.length === 1) {
+    index = diffs[0];
+  } else if (diffs.length === 2) {
+    index = (diffs[0] + diffs[1]) / 2;
+  } else {
+    const config = proratedTable[Math.min(diffs.length, 20)];
+    const bestDiffs = diffs.slice(0, config.count);
+    index = bestDiffs.reduce((a, b) => a + b, 0) / bestDiffs.length;
+  }
+
+  index = index.toFixed(1);
+
+  handicapIndexEl.textContent = index;
+  bestDiffEl.textContent = Math.min(...diffs);
+
+  if (diffs.length === 1) {
+    statusText.textContent = "Based on 1 round – estimate only.";
+  } else if (diffs.length === 2) {
+    statusText.textContent = "Based on average of 2 rounds.";
+  } else {
+    const config = proratedTable[Math.min(diffs.length, 20)];
+    statusText.textContent = `Using best ${config.count} of ${diffs.length} rounds.`;
+  }
+
+  calculateCourseHandicap(index);
+}
+
+            function calculateCourseHandicap(index) {
+        const hIndex = parseFloat(index);
+        const difficulty = calcDifficulty.value;
+        const roundType = calcRoundType.value;
+        const parInput = calcPar.value.trim();
+        const par = parInput === "" ? null : parseFloat(parInput);
+
+        if (isNaN(hIndex) || !difficulty || par === null || scores.length === 0) {
+          courseHandicapResult.textContent = "--";
+          return;
+        }
+
+        const config = difficultySettings[difficulty];
+        const slope = config.slope;
+        const rating18 = config.rating18;
+
+        let effectivePar = par;
+        if (roundType === "9") {
+          effectivePar = par * 2;
+        }
+
+        const eighteenHoleResult = hIndex * (slope / 113) + (rating18 - effectivePar);
+
+        if (roundType === "9") {
+          const nineHoleResult = eighteenHoleResult / 2;
+          courseHandicapResult.textContent = Math.round(nineHoleResult);
+        } else {
+          courseHandicapResult.textContent = Math.round(eighteenHoleResult);
+        }
+      }
+
+      function renderScores() {
+        scoreTableBody.innerHTML = "";
+        if (scores.length === 0) {
+          emptyState.classList.remove("hidden");
+          totalRoundsEl.textContent = "0";
+          return;
+        }
+        emptyState.classList.add("hidden");
+        totalRoundsEl.textContent = scores.length;
+
+        const recent20 = scores.slice(0, 20);
+        const numToCount =
+          scores.length >= 20 ? 8 : proratedTable[scores.length]?.count || 0;
+
+        const sortedIndices = recent20
+          .map((s, i) => ({ diff: parseFloat(s.diff), index: i }))
+          .sort((a, b) => a.diff - b.diff)
+          .slice(0, numToCount)
+          .map((item) => item.index);
+
+        recent20.forEach((score, index) => {
+          const isCounting = sortedIndices.includes(index);
+          const tr = document.createElement("tr");
+          tr.className = `score-card ${isCounting ? "best-score" : "text-gray-600"}`;
+          tr.innerHTML = `
+                    <td class="px-6 py-4 font-medium text-gray-400">#${scores.length - index}</td>
+                    <td class="px-6 py-4 font-bold text-gray-900">${score.gross}</td>
+                    <td class="px-6 py-4 text-sm">
+  ${
+    score.difficulty
+      ? score.difficulty.charAt(0).toUpperCase() + score.difficulty.slice(1)
+      : "Medium"
+  }
+  (${score.roundType || "18"}H)
+</td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isCounting ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}">
+                            ${score.diff}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <button onclick="deleteScore(${index})" class="text-red-400 hover:text-red-600 transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </td>
+                `;
+          scoreTableBody.appendChild(tr);
+        });
+      }
+
+      scoreForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const gross = parseFloat(document.getElementById("grossScore").value);
+
+        const difficulty = document.getElementById("courseDifficulty").value;
+
+        const roundType = document.getElementById("roundType").value;
+
+        const config = difficultySettings[difficulty];
+
+        const rating = roundType === "9" ? config.rating9 : config.rating18;
+
+        const slope = config.slope;
+
+        const diff = calculateDifferential(gross, rating, slope);
+        scores.unshift({
+          gross,
+          difficulty,
+          roundType,
+          rating,
+          slope,
+          diff,
+          date: new Date().toISOString(),
+        });
+        localStorage.setItem("golfScores", JSON.stringify(scores));
+
+        scoreForm.reset();
+        renderScores();
+        updateHandicapIndex();
+      });
+
+      window.deleteScore = function (index) {
+        scores.splice(index, 1);
+        localStorage.setItem("golfScores", JSON.stringify(scores));
+        renderScores();
+        updateHandicapIndex();
+      };
+
+      document.getElementById("clearAll").addEventListener("click", () => {
+        if (confirm("Clear all rounds from history?")) {
+          scores = [];
+          localStorage.removeItem("golfScores");
+          renderScores();
+          updateHandicapIndex();
+          calcPar.value = "";
+          courseHandicapResult.textContent = "--";
+        }
+      });
+
+      calcRoundType.addEventListener("change", function() {
+        calcPar.value = "";
+        courseHandicapResult.textContent = "--";
+      });
+
+      [calcDifficulty, calcRoundType, calcPar].forEach((el) => {
+        el.addEventListener("input", () => updateHandicapIndex());
+      });
+      calcPar.value = "";
+      courseHandicapResult.textContent = "--";
+      renderScores();
+      updateHandicapIndex();
+    </script>
+    <div class="app-version">v2606.01A</div>
+  </body>
+</html>
