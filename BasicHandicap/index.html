@@ -29,7 +29,7 @@
           linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
           url("https://images.unsplash.com/photo-1693163640190-f9dd38a88940?fm=jpg&q=60&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0");
         background-size: cover;
-        background-position: center;
+        background-position: top;
       }
       .glass {
         background: rgba(255, 255, 255, 0.95);
@@ -226,7 +226,7 @@
               <h2
                 class="text-gray-500 text-sm font-bold uppercase tracking-widest mb-1"
               >
-                Your Casual Handicap Index
+                Your Casual Handicap Index (18 Holes)
               </h2>
               <div
                 id="handicapIndex"
@@ -400,7 +400,7 @@ const proratedTable = {
         return (((score - rating) * 113) / slope).toFixed(1);
       }
 
-      function updateHandicapIndex() {
+function updateHandicapIndex() {
   const statusText = document.getElementById("statusText");
 
   if (scores.length < 1) {
@@ -412,7 +412,13 @@ const proratedTable = {
   }
 
   const recentScores = scores.slice(0, 20);
-  const diffs = recentScores.map(s => parseFloat(s.diff)).sort((a, b) => a - b);
+  const diffs = recentScores.map(s => {
+    let diff = parseFloat(s.diff);
+    if (s.roundType === "9") {
+      diff = diff * 2;
+    }
+    return diff;
+  }).sort((a, b) => a - b);
 
   let index;
 
@@ -426,7 +432,7 @@ const proratedTable = {
     index = bestDiffs.reduce((a, b) => a + b, 0) / bestDiffs.length;
   }
 
-  index = index.toFixed(1);
+  index = Math.round(index);
 
   handicapIndexEl.textContent = index;
   bestDiffEl.textContent = Math.min(...diffs);
@@ -443,36 +449,41 @@ const proratedTable = {
   calculateCourseHandicap(index);
 }
 
-            function calculateCourseHandicap(index) {
-        const hIndex = parseFloat(index);
-        const difficulty = calcDifficulty.value;
-        const roundType = calcRoundType.value;
-        const parInput = calcPar.value.trim();
-        const par = parInput === "" ? null : parseFloat(parInput);
-
-        if (isNaN(hIndex) || !difficulty || par === null || scores.length === 0) {
-          courseHandicapResult.textContent = "--";
-          return;
-        }
-
-        const config = difficultySettings[difficulty];
-        const slope = config.slope;
-        const rating18 = config.rating18;
-
-        let effectivePar = par;
-        if (roundType === "9") {
-          effectivePar = par * 2;
-        }
-
-        const eighteenHoleResult = hIndex * (slope / 113) + (rating18 - effectivePar);
-
-        if (roundType === "9") {
-          const nineHoleResult = eighteenHoleResult / 2;
-          courseHandicapResult.textContent = Math.round(nineHoleResult);
-        } else {
-          courseHandicapResult.textContent = Math.round(eighteenHoleResult);
-        }
-      }
+function calculateCourseHandicap(index) {
+  const hIndex = parseFloat(index);
+  const difficulty = calcDifficulty.value;
+  const roundType = calcRoundType.value;
+  const parInput = calcPar.value.trim();
+  if (parInput === "") {
+    courseHandicapResult.textContent = "--";
+    return;
+  }
+  const par = parseFloat(parInput);
+  if (isNaN(par)) {
+    alert("Please enter a numeric value for par.");
+    calcPar.value = "";
+    courseHandicapResult.textContent = "--";
+    return;
+  }
+  if (isNaN(hIndex) || !difficulty || scores.length === 0) {
+    courseHandicapResult.textContent = "--";
+    return;
+  }
+  const config = difficultySettings[difficulty];
+  const slope = config.slope;
+  const rating18 = config.rating18;
+  let effectivePar = par;
+  if (roundType === "9") {
+    effectivePar = par * 2;
+  }
+  const eighteenHoleResult = hIndex * (slope / 113) + (rating18 - effectivePar);
+  if (roundType === "9") {
+    const nineHoleResult = eighteenHoleResult / 2;
+    courseHandicapResult.textContent = Math.round(nineHoleResult);
+  } else {
+    courseHandicapResult.textContent = Math.round(eighteenHoleResult);
+  }
+}
 
       function renderScores() {
         scoreTableBody.innerHTML = "";
@@ -524,36 +535,34 @@ const proratedTable = {
         });
       }
 
-      scoreForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const gross = parseFloat(document.getElementById("grossScore").value);
-
-        const difficulty = document.getElementById("courseDifficulty").value;
-
-        const roundType = document.getElementById("roundType").value;
-
-        const config = difficultySettings[difficulty];
-
-        const rating = roundType === "9" ? config.rating9 : config.rating18;
-
-        const slope = config.slope;
-
-        const diff = calculateDifferential(gross, rating, slope);
-        scores.unshift({
-          gross,
-          difficulty,
-          roundType,
-          rating,
-          slope,
-          diff,
-          date: new Date().toISOString(),
-        });
-        localStorage.setItem("golfScores", JSON.stringify(scores));
-
-        scoreForm.reset();
-        renderScores();
-        updateHandicapIndex();
-      });
+scoreForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const grossInput = document.getElementById("grossScore").value;
+  const gross = parseFloat(grossInput);
+  if (isNaN(gross) || gross <= 0 || !Number.isInteger(gross) || gross > 999) {
+    alert("Please enter a valid gross score (positive whole number, max 999).");
+    return;
+  }
+  const difficulty = document.getElementById("courseDifficulty").value;
+  const roundType = document.getElementById("roundType").value;
+  const config = difficultySettings[difficulty];
+  const rating = roundType === "9" ? config.rating9 : config.rating18;
+  const slope = config.slope;
+  const diff = calculateDifferential(gross, rating, slope);
+  scores.unshift({
+    gross,
+    difficulty,
+    roundType,
+    rating,
+    slope,
+    diff,
+    date: new Date().toISOString(),
+  });
+  localStorage.setItem("golfScores", JSON.stringify(scores));
+  scoreForm.reset();
+  renderScores();
+  updateHandicapIndex();
+});
 
       window.deleteScore = function (index) {
         scores.splice(index, 1);
