@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<!-- saved from url=(0056)file:///D:/Web%20pages/Web-Development/Super/Super2.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aust Supera Retirement Projector</title>
+    <!-- Created By Mark Livera 2026 -->
+    <script src="./Aust Supera Retirement Projector_files/chart.umd.min.js.download"></script>
+    <style>
+        :root {
+            --primary: #006644;
+            --secondary: #FFCC00;
+            --dark: #202020;
+            --light: #74a7f3;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: var(--light);
+            color: var(--dark);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgb(156, 237, 136);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        h1, h2 {
+            color: var(--primary);
+            margin-top: 0;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+        }
+        @media (max-width: 900px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+        .panel {
+            background: #fafafa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #eef0f2;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        button {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #004d33;
+        }
+        .results-box {
+            background: #e6f2ed;
+            border-left: 5px solid var(--primary);
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 0 6px 6px 0;
+        }
+        .results-box h3 {
+            margin: 0 0 5px 0;
+            color: var(--primary);
+        }
+        .results-box p {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin: 0;
+        }
+        .chart-container {
+            position: relative;
+            margin-bottom: 40px;
+            height: 350px;
+        }
+              .app-version {
+        position: fixed;
+        bottom: 6px;
+        right: 10px;
+        font-size: 10px;
+        color: #888888;
+        font-family: monospace, sans-serif;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        z-index: 9999;
+        pointer-events: none;
+        user-select: none;
+      }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Superannuation &amp; Age Pension Projector</h1>
+    <p>Calculate your accumulated super balance at retirement and see how long your funds will last alongside the Australian Age Pension.</p>
+    
+    <div class="grid">
+        <div class="panel">
+            <h2>Your Details</h2>
+            
+            <div class="form-group">
+                <label for="currentAge">Current Age</label>
+                <input type="number" id="currentAge" value="35" min="15" max="100">
+            </div>
+            
+            <div class="form-group">
+                <label for="retirementAge">Planned Retirement Age</label>
+                <input type="number" id="retirementAge" value="67" min="60" max="100">
+            </div>
+            
+            <div class="form-group">
+                <label for="currentBalance">Current Super Balance ($)</label>
+                <input type="number" id="currentBalance" value="100000" step="1000">
+            </div>
+            
+            <div class="form-group">
+                <label for="annualSalary">Current Annual Salary ($ gross)</label>
+                <input type="number" id="annualSalary" value="90000" step="1000">
+            </div>
+            
+            <div class="form-group">
+                <label for="employerContribution">Employer Contribution Rate (%)</label>
+                <input type="number" id="employerContribution" value="12" step="0.5">
+            </div>
+            
+            <div class="form-group">
+                <label for="voluntaryContribution">Your Annual Voluntary Contributions ($)</label>
+                <input type="number" id="voluntaryContribution" value="0" step="100">
+            </div>
+            
+            <div class="form-group">
+                <label for="retirementIncome">Desired Annual Retirement Income ($ real)</label>
+                <input type="number" id="retirementIncome" value="60000" step="1000">
+            </div>
+            
+            <div class="form-group">
+                <label for="relationshipStatus">Relationship Status (for Age Pension)</label>
+                <select id="relationshipStatus">
+                    <option value="single">Single</option>
+                    <option value="couple">Couple (Combined)</option>
+                </select>
+            </div>
+            
+            <button onclick="calculateProjections()">Calculate Projections</button>
+        </div>
+        
+        <div>
+            <div class="results-box">
+                <h3>Projected Balance at Retirement</h3>
+                <p id="retirementBalanceOutput">$1,000,479</p>
+                <span style="font-size:0.85rem; color:#555;">(Adjusted for 2.5% future inflation back to today's purchasing power)</span>
+            </div>
+            
+            <h2>Super Balance Trajectory</h2>
+            <div class="chart-container">
+                <canvas id="balanceChart" width="1134" height="525" style="display: block; box-sizing: border-box; height: 350px; width: 756px;"></canvas>
+            </div>
+            
+            <h2>Retirement Income Breakdown (Super vs Age Pension)</h2>
+            <div class="chart-container">
+                <canvas id="incomeChart" width="1134" height="525" style="display: block; box-sizing: border-box; height: 350px; width: 756px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let balanceChartInstance = null;
+    let incomeChartInstance = null;
+
+    function calculateProjections() {
+        const currentAge = parseInt(document.getElementById('currentAge').value) || 35;
+        const retirementAge = parseInt(document.getElementById('retirementAge').value) || 67;
+        let superBalance = parseFloat(document.getElementById('currentBalance').value) || 0;
+        const annualSalary = parseFloat(document.getElementById('annualSalary').value) || 0;
+        const employerRate = (parseFloat(document.getElementById('employerContribution').value) || 12) / 100;
+        const voluntaryContrib = parseFloat(document.getElementById('voluntaryContribution').value) || 0;
+        const targetIncome = parseFloat(document.getElementById('retirementIncome').value) || 50000;
+        const isSingle = document.getElementById('relationshipStatus').value === 'single';
+
+        const nominalReturn = 0.075;     
+        const inflationRate = 0.025;     
+        const realReturn = (1 + nominalReturn) / (1 + inflationRate) - 1; 
+        const adminFeeFixed = 90;        
+        const investmentFeeRate = 0.006; 
+        const contributionsTax = 0.15;   
+
+        // 2026 Indexed Age Pension Framework Parameters
+        const maxPensionSingle = 31223;  
+        const maxPensionCouple = 47070;  
+        
+        const assetLowerSingle = 321500;  
+        const assetUpperSingle = 722000;  
+        const assetLowerCouple = 481500;  
+        const assetUpperCouple = 1085000; 
+
+        const yearsToRetirement = retirementAge - currentAge;
+        for (let year = 0; year < yearsToRetirement; year++) {
+            const sgContribution = annualSalary * employerRate;
+            const totalConcessional = sgContribution + voluntaryContrib;
+            const netContributions = totalConcessional * (1 - contributionsTax);
+            
+            superBalance = superBalance + netContributions;
+            superBalance = superBalance * (1 + realReturn);
+            superBalance = superBalance - adminFeeFixed - (superBalance * investmentFeeRate);
+        }
+
+        document.getElementById('retirementBalanceOutput').innerText = 
+            new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(superBalance);
+
+        let retirementLabels = [];
+        let balanceHistory = [];
+        let superIncomeHistory = [];
+        let pensionIncomeHistory = [];
+        let shortFallHistory = [];
+
+        let currentRetirementBalance = superBalance;
+        const maxAge = 100;
+        const targetMaxPension = isSingle ? maxPensionSingle : maxPensionCouple;
+        const lowerAssetLimit = isSingle ? assetLowerSingle : assetLowerCouple;
+        const upperAssetLimit = isSingle ? assetUpperSingle : assetUpperCouple;
+
+        // Convert to monthly values
+        const monthlyTargetIncome = targetIncome / 12;
+        const monthlyRealReturn = Math.pow(1 + realReturn, 1/12) - 1;
+        const monthlyAdminFee = adminFeeFixed / 12;
+        const monthlyInvestmentFeeRate = investmentFeeRate / 12;
+
+        for (let age = retirementAge; age <= maxAge; age++) {
+            // Store starting balance for this year (for chart)
+            balanceHistory.push(Math.max(0, currentRetirementBalance));
+            
+            let totalYearSuperWithdrawal = 0;
+            let totalYearPension = 0;
+            
+            // Simulate each month of the year
+            for (let month = 1; month <= 12; month++) {
+                if (currentRetirementBalance <= 0) break;
+                
+                // Calculate monthly pension based on current balance
+                let monthlyPension = 0;
+                
+                if (currentRetirementBalance <= lowerAssetLimit) {
+                    monthlyPension = targetMaxPension / 12;
+                } else if (currentRetirementBalance > lowerAssetLimit && currentRetirementBalance < upperAssetLimit) {
+                    const excessAssets = currentRetirementBalance - lowerAssetLimit;
+                    const annualPensionReduction = (excessAssets / 1000) * 3 * 26;
+                    const annualPension = Math.max(0, targetMaxPension - annualPensionReduction);
+                    monthlyPension = annualPension / 12;
+                } else {
+                    monthlyPension = 0;
+                }
+                
+                // Calculate how much to withdraw from super this month
+                let monthlySuperWithdrawal = monthlyTargetIncome - monthlyPension;
+                if (monthlySuperWithdrawal < 0) monthlySuperWithdrawal = 0;
+                
+                // Perform withdrawal (at start of month)
+                if (currentRetirementBalance >= monthlySuperWithdrawal) {
+                    currentRetirementBalance -= monthlySuperWithdrawal;
+                    totalYearSuperWithdrawal += monthlySuperWithdrawal;
+                    totalYearPension += monthlyPension;
+                } else {
+                    // Not enough super left - withdraw whatever remains
+                    totalYearSuperWithdrawal += currentRetirementBalance;
+                    currentRetirementBalance = 0;
+                    break;
+                }
+                
+                // Apply monthly returns and fees after withdrawal
+                if (currentRetirementBalance > 0) {
+                    currentRetirementBalance = currentRetirementBalance * (1 + monthlyRealReturn);
+                    currentRetirementBalance -= monthlyAdminFee + (currentRetirementBalance * monthlyInvestmentFeeRate);
+                    if (currentRetirementBalance < 0) currentRetirementBalance = 0;
+                }
+            }
+            
+            // Store annual totals for charts
+            retirementLabels.push(`Age ${age}`);
+            superIncomeHistory.push(totalYearSuperWithdrawal);
+            pensionIncomeHistory.push(totalYearPension);
+            
+            // Calculate any shortfall for the year
+            let annualShortfall = targetIncome - (totalYearSuperWithdrawal + totalYearPension);
+            shortFallHistory.push(annualShortfall > 0 ? annualShortfall : 0);
+            
+            // If super ran out, fill remaining years with pension only
+            if (currentRetirementBalance <= 0) {
+                // Fill remaining ages
+                for (let remainingAge = age + 1; remainingAge <= maxAge; remainingAge++) {
+                    retirementLabels.push(`Age ${remainingAge}`);
+                    balanceHistory.push(0);
+                    superIncomeHistory.push(0);
+                    
+                    let annualPensionOnly = targetMaxPension;
+                    pensionIncomeHistory.push(annualPensionOnly);
+                    
+                    let shortfall = targetIncome - annualPensionOnly;
+                    shortFallHistory.push(shortfall > 0 ? shortfall : 0);
+                }
+                break;
+            }
+        }
+
+        renderCharts(retirementLabels, balanceHistory, superIncomeHistory, pensionIncomeHistory, shortFallHistory);
+    }
+
+    function renderCharts(labels, balanceData, superIncomeData, pensionIncomeData, shortfallData) {
+        if (typeof Chart === 'undefined') return;
+
+        if (balanceChartInstance) balanceChartInstance.destroy();
+        if (incomeChartInstance) incomeChartInstance.destroy();
+
+        const ctx1 = document.getElementById('balanceChart').getContext('2d');
+        balanceChartInstance = new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Super Balance ($)',
+                    data: balanceData,
+                    backgroundColor: '#006644'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        const ctx2 = document.getElementById('incomeChart').getContext('2d');
+        incomeChartInstance = new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Income from Super ($)', data: superIncomeData, backgroundColor: '#008855' },
+                    { label: 'Age Pension Supplement ($)', data: pensionIncomeData, backgroundColor: '#FFCC00' },
+                    { label: 'Unmet Income Shortfall ($)', data: shortfallData, backgroundColor: '#d9534f' }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
+            }
+        });
+    }
+
+    function initializeCalculator() {
+        if (typeof Chart !== 'undefined') {
+            calculateProjections();
+        } else {
+            setTimeout(initializeCalculator, 50);
+        }
+    }
+
+    window.onload = initializeCalculator;
+</script>
+<div class="app-version">2606.01A</div>
+
+
+</body></html>
