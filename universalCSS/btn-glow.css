@@ -1,0 +1,111 @@
+:root {
+  --color-1: #4285f4;
+  --color-2: #9b51e0;
+  --color-3: #e24a8a;
+  --color-4: #fbbc05;
+}
+
+.btn {
+  /* Your EXACT original dimensions that fit perfectly */
+  padding: 10px 20px;
+  border-radius: 25px;
+  background: #004aad;
+  color: #ffd700;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s;
+
+  /* FIXES: Creates a strict layer boundary so glow cannot cover text or alter header heights */
+  position: relative;
+  isolation: isolate; 
+  
+  /* Mouse variables for JS tracking */
+  --mouse-x: 50%;
+  --mouse-y: 50%;
+}
+
+.btn:hover {
+  background: #0066ff;
+}
+
+/* Sharp outer perimeter line halo */
+.btn::before {
+  content: "";
+  position: absolute;
+  inset: -1.5px; 
+  border-radius: 26.5px;
+  /* Stays safely at the bottom of the isolated button stack */
+  z-index: -1; 
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  background: linear-gradient(45deg, var(--color-1), var(--color-2), var(--color-3), var(--color-4), var(--color-1));
+  background-size: 400% 400%;
+  animation: load-flash 2.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* Backing aura neon mist layer */
+.btn::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 28px;
+  filter: blur(14px);
+  opacity: 0.45;
+  transition: opacity 0.3s ease, filter 0.3s ease;
+  /* Deepest layer in the stack */
+  z-index: -2; 
+  background: linear-gradient(45deg, var(--color-1), var(--color-2), var(--color-3), var(--color-4), var(--color-1));
+  background-size: 400% 400%;
+  animation: load-flash 2.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* ==========================================================================
+   MOBILE & TABLET DEFAULT STATE: Continuous Circling Loop 
+   ========================================================================== */
+.btn:hover::before,
+.btn:hover::after {
+  animation: perpetual-spin 6s linear infinite;
+}
+
+.btn:hover::after {
+  opacity: 0.85;
+  filter: blur(18px);
+}
+
+/* ==========================================================================
+   DESKTOP SCREEN OVERRIDE: Switches to Mouse-Tracking Radial Layout
+   ========================================================================== */
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover::before,
+  .btn:hover::after {
+    animation: none;
+    background: radial-gradient(
+      circle at var(--mouse-x) var(--mouse-y),
+      var(--color-1) 0%,
+      var(--color-2) 25%,
+      var(--color-3) 50%,
+      var(--color-4) 75%,
+      transparent 100%
+    );
+    background-size: 100% 100%;
+  }
+
+  .btn:hover::after {
+    opacity: 0.9;
+    filter: blur(18px);
+  }
+}
+
+/* Base keyframe animations */
+@keyframes load-flash {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+@keyframes perpetual-spin {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 400% 50%; }
+}
