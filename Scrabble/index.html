@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Scrabble Scorer</title>
     <!-- Created by Mark Livera 2025 -->
-    <style>
+ <style>
       body {
         margin: 0;
         background: #363838;
@@ -21,6 +21,7 @@
         top: 0;
         background: #363838;
         width: 100%;
+        box-sizing: border-box;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -41,6 +42,8 @@
         flex-wrap: nowrap;
         gap: 0.05em;
         white-space: nowrap;
+        min-width: 0;
+        width: 100%;
       }
       .scrabble-title .tile {
         flex-shrink: 0;
@@ -48,8 +51,9 @@
       header .controls {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        flex-shrink: 0;
+        gap: 0.4rem;
+        flex-shrink: 1;
+        min-width: 0;
       }
       .container {
         display: grid;
@@ -60,18 +64,41 @@
         padding: 0.2rem 0.5rem 0.5rem;
         box-sizing: border-box;
       }
-      @media (max-width: 1200px) {
+      @media (max-width: 1300px) {
         .container {
           grid-template-columns: repeat(2, 1fr);
         }
-        .title-container {
-          min-width: 0;
-          flex: 1;
+
+        header {
+          flex-direction: column;
+          gap: 0.4rem;
+          padding: 0.3rem 0.5rem;
         }
+
+        .title-container {
+          width: 100%;
+          min-width: 0;
+          flex: none;
+        }
+
+        .scrabble-title {
+          justify-content: center;
+          width: 100%;
+        }
+
         .scrabble-title .tile {
           width: 26px;
           height: 26px;
           font-size: 0.9rem;
+          flex-shrink: 0;
+        }
+
+        header .controls {
+          width: 100%;
+          justify-content: center;
+          gap: 0.4rem;
+          flex-shrink: 0;
+          flex-wrap: nowrap;
         }
       }
 
@@ -79,13 +106,41 @@
         body {
           overflow: auto;
         }
+
         .container {
           grid-template-columns: 1fr;
         }
+
+        header {
+          gap: 0.3rem;
+          padding: 0.3rem 0.4rem;
+        }
+
+        .scrabble-title {
+          gap: 0.03em;
+        }
+
         .scrabble-title .tile {
           width: 22px;
           height: 22px;
           font-size: 0.8rem;
+        }
+
+        header .controls {
+          gap: 0.25rem;
+          flex-wrap: wrap;
+          font-size: 0.85rem;
+        }
+
+        header .controls button,
+        header .controls select {
+          font-size: 0.85rem;
+          padding: 0.25rem 0.4rem;
+        }
+
+        header .controls label,
+        #roundDisplay {
+          font-size: 0.85rem;
         }
       }
       .player {
@@ -484,36 +539,49 @@
         }
 
         // -------------------- Add / Remove score --------------------
-        function addScore() {
-          const val = parseInt(scoreInput.value);
-          if (isNaN(val)) return;
+       function addScore() {
+  const val = parseInt(scoreInput.value);
+  if (isNaN(val)) return;
 
-          turnCount++;
-          totalScore += val;
-          turnsArr.push(val);
-          players[index].data.score = totalScore;
-          players[index].data.turns = turnsArr;
-          saveGame();
+  const otherTurnCounts = players
+    .filter((p) => p !== players[index])
+    .map((p) => p.data.turns.length);
 
-          scoreDisplay.textContent = "Score: " + totalScore;
-          const row = document.createElement("tr");
-          row.innerHTML = `<td>${turnCount}</td><td>${val}</td><td>${totalScore}</td>`;
-          turnsBody.appendChild(row);
+  const lowestTurnCount =
+    otherTurnCounts.length > 0 ? Math.min(...otherTurnCounts) : 0;
 
-          turnTracker++;
-          if (turnTracker >= players.length) {
-            turnTracker = 0;
-            currentTurn++;
-            document.getElementById("roundDisplay").textContent =
-              "Round " + currentTurn;
-          }
+  if (turnCount + 1 > lowestTurnCount + 1) {
+    alert("Did you forget to enter the previous score");
+    scoreInput.focus();
+    return;
+  }
 
-          updateRanks();
-          updateTurnBadge();
+  turnCount++;
+  totalScore += val;
+  turnsArr.push(val);
+  players[index].data.score = totalScore;
+  players[index].data.turns = turnsArr;
+  saveGame();
 
-          scoreInput.value = "";
-          scoreInput.focus();
-        }
+  scoreDisplay.textContent = "Score: " + totalScore;
+  const row = document.createElement("tr");
+  row.innerHTML = `<td>${turnCount}</td><td>${val}</td><td>${totalScore}</td>`;
+  turnsBody.appendChild(row);
+
+  turnTracker++;
+  if (turnTracker >= players.length) {
+    turnTracker = 0;
+    currentTurn++;
+    document.getElementById("roundDisplay").textContent =
+      "Round " + currentTurn;
+  }
+
+  updateRanks();
+  updateTurnBadge();
+
+  scoreInput.value = "";
+  scoreInput.focus();
+}
 
         function removeScore() {
           if (!turnsArr.length) return;
