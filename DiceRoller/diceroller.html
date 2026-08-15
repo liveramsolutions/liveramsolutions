@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Dice Roller</title>
+    <!-- Created By Mark Livera 2026 -->
+    <style>
+      :root {
+        --bg-color: #121214;
+        --panel-bg: #1e1e24;
+        --accent-color: #ff4757;
+        --text-color: #ffffff;
+        --dice-size: 75px;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family:
+          "Segoe UI",
+          system-ui,
+          -apple-system,
+          sans-serif;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 900px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 30px;
+      }
+
+      h1 {
+        font-size: 2.2rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: #f1f2f6;
+        text-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+        text-align: center;
+      }
+
+      /* Controls Panel */
+      .controls {
+        background: var(--panel-bg);
+        padding: 15px 30px;
+        border-radius: 50px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .control-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      label {
+        font-weight: 600;
+        font-size: 1rem;
+        color: #a4b0be;
+      }
+
+      .dice-select-btn {
+        background: #2f3542;
+        color: white;
+        border: 2px solid #57606f;
+        padding: 10px 22px;
+        border-radius: 25px;
+        font-size: 1rem;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.2s ease;
+      }
+
+      .dice-select-btn:hover {
+        border-color: var(--accent-color);
+        background: #3f4656;
+      }
+
+      .roll-btn {
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        padding: 12px 35px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        border-radius: 25px;
+        cursor: pointer;
+        box-shadow: 0 5px 15px rgba(255, 71, 87, 0.3);
+        transition: all 0.2s ease;
+        text-transform: uppercase;
+      }
+
+      .roll-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(255, 71, 87, 0.5);
+        background: #ff6b81;
+      }
+
+      .roll-btn:disabled {
+        background: #747d8c;
+        box-shadow: none;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      /* Dice Felt/Board */
+      .dice-board {
+        width: 100%;
+        min-height: 280px;
+        background: radial-gradient(circle, #1e3c23 0%, #112214 100%);
+        border: 8px solid #3d2314;
+        border-radius: 24px;
+        padding: 40px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 40px;
+        perspective: 1200px;
+        box-shadow:
+          inset 0 10px 30px rgba(0, 0, 0, 0.6),
+          0 15px 30px rgba(0, 0, 0, 0.5);
+      }
+
+      /* 3D Scene setup */
+      .scene {
+        width: var(--dice-size);
+        height: var(--dice-size);
+      }
+
+      .cube {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        transform-style: preserve-3d;
+        transition: transform 1.4s cubic-bezier(0.25, 1, 0.5, 1);
+      }
+
+      .cube-face {
+        position: absolute;
+        width: var(--dice-size);
+        height: var(--dice-size);
+        background: #f10404;
+        border: 1px solid #b90303;
+        border-radius: 14px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(3, 1fr);
+        padding: 10px;
+        box-sizing: border-box;
+        box-shadow:
+          inset 0 0 12px rgba(0, 0, 0, 0.2),
+          0 0 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .dot {
+        display: block;
+        background: #aeb5c5;
+        border-radius: 50%;
+        width: 14px;
+        height: 14px;
+        margin: auto;
+        box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.4);
+      }
+
+      /* 3D Rotations for 1-6 positions */
+      .face-1 {
+        transform: rotateY(0deg) translateZ(calc(var(--dice-size) / 2));
+      }
+      .face-2 {
+        transform: rotateY(90deg) translateZ(calc(var(--dice-size) / 2));
+      }
+      .face-3 {
+        transform: rotateX(90deg) translateZ(calc(var(--dice-size) / 2));
+      }
+      .face-4 {
+        transform: rotateX(-90deg) translateZ(calc(var(--dice-size) / 2));
+      }
+      .face-5 {
+        transform: rotateY(-90deg) translateZ(calc(var(--dice-size) / 2));
+      }
+      .face-6 {
+        transform: rotateY(180deg) translateZ(calc(var(--dice-size) / 2));
+      }
+
+      /* Grid Placement for Dots */
+      .face-1 .dot {
+        grid-area: 2 / 2;
+      }
+
+      .face-2 .dot:nth-child(1) {
+        grid-area: 1 / 1;
+      }
+      .face-2 .dot:nth-child(2) {
+        grid-area: 3 / 3;
+      }
+
+      .face-3 .dot:nth-child(1) {
+        grid-area: 1 / 1;
+      }
+      .face-3 .dot:nth-child(2) {
+        grid-area: 2 / 2;
+      }
+      .face-3 .dot:nth-child(3) {
+        grid-area: 3 / 3;
+      }
+
+      .face-4 .dot:nth-child(1) {
+        grid-area: 1 / 1;
+      }
+      .face-4 .dot:nth-child(2) {
+        grid-area: 1 / 3;
+      }
+      .face-4 .dot:nth-child(3) {
+        grid-area: 3 / 1;
+      }
+      .face-4 .dot:nth-child(4) {
+        grid-area: 3 / 3;
+      }
+
+      .face-5 .dot:nth-child(1) {
+        grid-area: 1 / 1;
+      }
+      .face-5 .dot:nth-child(2) {
+        grid-area: 1 / 3;
+      }
+      .face-5 .dot:nth-child(3) {
+        grid-area: 2 / 2;
+      }
+      .face-5 .dot:nth-child(4) {
+        grid-area: 3 / 1;
+      }
+      .face-5 .dot:nth-child(5) {
+        grid-area: 3 / 3;
+      }
+
+      .face-6 .dot:nth-child(1) {
+        grid-area: 1 / 1;
+      }
+      .face-6 .dot:nth-child(2) {
+        grid-area: 2 / 1;
+      }
+      .face-6 .dot:nth-child(3) {
+        grid-area: 3 / 1;
+      }
+      .face-6 .dot:nth-child(4) {
+        grid-area: 1 / 3;
+      }
+      .face-6 .dot:nth-child(5) {
+        grid-area: 2 / 3;
+      }
+      .face-6 .dot:nth-child(6) {
+        grid-area: 3 / 3;
+      }
+
+      /* Pop-up Overlay (Modal) */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(4px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+        z-index: 1000;
+      }
+
+      .modal-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .modal-card {
+        background: var(--panel-bg);
+        padding: 30px;
+        border-radius: 20px;
+        width: 85%;
+        max-width: 380px;
+        text-align: center;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        transform: scale(0.85);
+        transition: transform 0.25s ease;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .modal-overlay.active .modal-card {
+        transform: scale(1);
+      }
+
+      .modal-card h3 {
+        margin-bottom: 20px;
+        color: #f1f2f6;
+        font-size: 1.25rem;
+      }
+
+      .number-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .num-btn {
+        background: #2f3542;
+        color: white;
+        border: 2px solid #57606f;
+        padding: 14px 0;
+        font-size: 1.3rem;
+        font-weight: bold;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .num-btn.selected {
+        background: var(--accent-color);
+        border-color: var(--accent-color);
+      }
+
+      .cancel-btn {
+        background: transparent;
+        color: #a4b0be;
+        border: none;
+        font-size: 0.95rem;
+        cursor: pointer;
+        text-decoration: underline;
+      }
+
+      /* Screen Breakpoints for Scalability */
+      @media (min-width: 768px) {
+        :root {
+          --dice-size: 105px;
+        }
+        .dot {
+          width: 18px;
+          height: 18px;
+        }
+        h1 {
+          font-size: 3rem;
+        }
+      }
+
+      @media (max-width: 600px) {
+        .controls {
+          flex-direction: column;
+          border-radius: 20px;
+          width: 100%;
+          padding: 20px;
+          gap: 15px;
+        }
+        .control-group {
+          width: 100%;
+          justify-content: space-between;
+        }
+        .roll-btn {
+          width: 100%;
+        }
+        .dice-board {
+          padding: 20px;
+          gap: 25px;
+          min-height: 200px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>3D Dice Roller</h1>
+
+      <div class="controls">
+        <div class="control-group">
+          <label>Number of Dice:</label>
+          <button class="dice-select-btn" id="pickerOpenBtn">2 Dice</button>
+        </div>
+        <button class="roll-btn" id="rollBtn">Roll Dice</button>
+      </div>
+
+      <!-- THIS WAS MISSING: The green felt board where the dice belong -->
+      <div class="dice-board" id="board"></div>
+    </div>
+
+    <div class="modal-overlay" id="pickerModal">
+      <div class="modal-card">
+        <h3>Select Number of Dice</h3>
+        <div class="number-grid">
+          <button class="num-btn" data-val="1">1</button>
+          <button class="num-btn selected" data-val="2">2</button>
+          <button class="num-btn" data-val="3">3</button>
+          <button class="num-btn" data-val="4">4</button>
+          <button class="num-btn" data-val="5">5</button>
+        </div>
+        <button class="cancel-btn" id="pickerCancelBtn">Cancel</button>
+      </div>
+    </div>
+
+    <script>
+      const board = document.getElementById("board");
+      const rollBtn = document.getElementById("rollBtn");
+      const pickerOpenBtn = document.getElementById("pickerOpenBtn");
+      const pickerModal = document.getElementById("pickerModal");
+      const pickerCancelBtn = document.getElementById("pickerCancelBtn");
+      const numBtns = document.querySelectorAll(".num-btn");
+
+      let diceCount = 2;
+
+      // X and Y axis angles to perfectly align each number face forward
+      const faceRotations = {
+        1: { x: 0, y: 0 },
+        2: { x: 0, y: -90 },
+        3: { x: -90, y: 0 },
+        4: { x: 90, y: 0 },
+        5: { x: 0, y: 90 },
+        6: { x: 180, y: 0 },
+      };
+
+      const diceFacesStructure = `
+            <div class="cube-face face-1"><span class="dot"></span></div>
+            <div class="cube-face face-2"><span class="dot"></span><span class="dot"></span></div>
+            <div class="cube-face face-3"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <div class="cube-face face-4"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <div class="cube-face face-5"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <div class="cube-face face-6"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        `;
+
+      function initializeDice() {
+        board.innerHTML = "";
+        for (let i = 0; i < diceCount; i++) {
+          const scene = document.createElement("div");
+          scene.className = "scene";
+
+          const cube = document.createElement("div");
+          cube.className = "cube";
+          cube.id = `dice-cube-${i}`;
+          cube.innerHTML = diceFacesStructure;
+
+          scene.appendChild(cube);
+          board.appendChild(scene);
+        }
+      }
+
+      function triggerRoll() {
+        rollBtn.disabled = true;
+
+        for (let i = 0; i < diceCount; i++) {
+          const cube = document.getElementById(`dice-cube-${i}`);
+          if (!cube) continue;
+
+          const result = Math.floor(Math.random() * 6) + 1;
+          const standardRotation = faceRotations[result];
+
+          // Dynamic extra spins (3 to 5 full flips) for organic movement
+          const randomFlipsX = (Math.floor(Math.random() * 3) + 3) * 360;
+          const randomFlipsY = (Math.floor(Math.random() * 3) + 3) * 360;
+
+          const targetX = standardRotation.x + randomFlipsX;
+          const targetY = standardRotation.y + randomFlipsY;
+
+          cube.style.transform = `rotateX(${targetX}deg) rotateY(${targetY}deg)`;
+        }
+
+        // Lock the button until tumbling animation ends (1.4 seconds)
+        setTimeout(() => {
+          rollBtn.disabled = false;
+        }, 1400);
+      }
+
+      // Open Overlay Menu
+      pickerOpenBtn.addEventListener("click", () => {
+        pickerModal.classList.add("active");
+      });
+
+      // Close Overlay Menu via Cancel
+      pickerCancelBtn.addEventListener("click", () => {
+        pickerModal.classList.remove("active");
+      });
+
+      // Handle selection within selection grid overlay
+      numBtns.forEach((button) => {
+        button.addEventListener("click", () => {
+          numBtns.forEach((b) => b.classList.remove("selected"));
+          button.classList.add("selected");
+
+          diceCount = parseInt(button.getAttribute("data-val"));
+          pickerOpenBtn.textContent = `${diceCount} ${diceCount === 1 ? "Die" : "Dice"}`;
+
+          initializeDice();
+          pickerModal.classList.remove("active");
+        });
+      });
+
+      // Close overlay clicking backdrop space
+      pickerModal.addEventListener("click", (e) => {
+        if (e.target === pickerModal) pickerModal.classList.remove("active");
+      });
+
+      rollBtn.addEventListener("click", triggerRoll);
+
+      // Run baseline setup
+      initializeDice();
+    </script>
+  </body>
+</html>
