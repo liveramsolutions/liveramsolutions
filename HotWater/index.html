@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gas vs Heat Pump Hot Water Comparison</title>
+    <!-- Created by Mark Livera 2026 -->
+     <link rel="stylesheet" href="../universalCSS/version.css">
+    <style>
+      :root {
+        --bg-color: #0f172a;
+        --card-bg: #1e293b;
+        --text-color: #f1f5f9;
+        --text-muted: #94a3b8;
+        --accent-hp: #10b981;
+        --accent-gas: #f97316;
+        --border: #334155;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        line-height: 1.5;
+        margin: 0;
+        padding: 2rem 1rem;
+      }
+
+      .container {
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 2.5rem;
+      }
+
+      .badge {
+        display: inline-block;
+        background: #1e293b;
+        border: 1px solid var(--border);
+        color: #38bdf8;
+        padding: 0.35rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+      }
+
+      h1 {
+        margin: 0 0 0.5rem 0;
+        font-size: 2.2rem;
+        color: #fff;
+      }
+      p.subtitle {
+        color: var(--text-muted);
+        margin: 0;
+        font-size: 1.1rem;
+      }
+
+      .layout-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+
+      @media (min-width: 768px) {
+        .layout-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      .card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        padding: 1.75rem;
+        border-radius: 14px;
+      }
+
+      h2 {
+        font-size: 1.3rem;
+        margin-top: 0;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.5rem;
+      }
+
+      .form-group {
+        margin-bottom: 1.25rem;
+      }
+      label {
+        display: block;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        color: #cbd5e1;
+      }
+      input,
+      select {
+        width: 100%;
+        padding: 0.75rem;
+        background: #0f172a;
+        border: 1px solid var(--border);
+        color: #fff;
+        border-radius: 8px;
+        box-sizing: border-box;
+        font-size: 1rem;
+      }
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: #38bdf8;
+      }
+
+      .results-panel {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+
+      .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 1rem;
+      }
+
+      .comparison-table th,
+      .comparison-table td {
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .comparison-table th {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+      }
+
+      .hp-text {
+        color: var(--accent-hp);
+        font-weight: bold;
+      }
+      .gas-text {
+        color: var(--accent-gas);
+        font-weight: bold;
+      }
+
+      .metric-block {
+        background: #0f172a;
+        padding: 1.25rem;
+        border-radius: 8px;
+        border-left: 4px solid var(--border);
+      }
+      .metric-block.hp {
+        border-left-color: var(--accent-hp);
+      }
+      .metric-block.gas {
+        border-left-color: var(--accent-gas);
+      }
+
+      .metric-title {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        color: var(--text-muted);
+      }
+      .metric-value {
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin: 0.25rem 0;
+      }
+      .metric-desc {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+      }
+
+      .warning-notice {
+        background: #451a03;
+        border: 1px solid #78350f;
+        color: #fed7aa;
+        padding: 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="badge">🔒 Zero Data-Tracking · 100% Client-Side</div>
+        <h1>Gas Storage vs. Heat Pump Calculator</h1>
+        <p class="subtitle">
+          Evaluate upfront costs, operational differences, recovery rates, and
+          real engineering lifespans.
+        </p>
+      </header>
+
+      <div class="layout-grid">
+        <!-- User Input Column -->
+        <div class="card">
+          <h2>System & Cost Settings</h2>
+
+          <div class="form-group">
+            <label for="dailyHotWater"
+              >Daily Hot Water Demand (Litres / Day)</label
+            >
+            <select id="dailyHotWater">
+              <option value="120">120L (1-2 People / Short Showers)</option>
+              <option value="200" selected>
+                200L (3-4 People / Standard Family)
+              </option>
+              <option value="320">320L (5+ People / High Demand)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="climateZone">Your Local Climate Profile</label>
+            <select id="climateZone">
+              <option value="hot">Hot / Tropical (Warm all year round)</option>
+              <option value="mild" selected>
+                Moderate / Temperate (Mild winters, warm summers)
+              </option>
+              <option value="cold">
+                Cool / Frost-Prone (Freezing winters, high frost chance)
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="gasTariff">Your Gas Tariff ($ per MJ)</label>
+            <input
+              type="number"
+              id="gasTariff"
+              value="0.0255"
+              min="0"
+              step="0.0005"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="elecTariff">Your Electricity Tariff ($ per kWh)</label>
+            <input
+              type="number"
+              id="elecTariff"
+              value="0.2750"
+              min="0"
+              step="0.0005"
+            />
+          </div>
+
+          <h2>Hardware Specifications</h2>
+          <div class="form-group">
+            <label for="gasNetCost">New Gas Storage Installed Cost ($)</label>
+            <input type="number" id="gasNetCost" value="1800" min="0" />
+          </div>
+
+          <div class="form-group">
+            <label for="hpNetCost"
+              >Heat Pump Installed Cost (Net of Rebates) ($)</label
+            >
+            <input type="number" id="hpNetCost" value="3800" min="0" />
+          </div>
+
+          <div class="form-group">
+            <label for="electricalCircuitCost"
+              >New Dedicated Electrical Circuit Cost ($)</label
+            >
+            <input
+              type="number"
+              id="electricalCircuitCost"
+              value="600"
+              min="0"
+              step="50"
+            />
+            <small
+              style="
+                color: var(--text-muted);
+                font-size: 0.8rem;
+                display: block;
+                margin-top: 0.25rem;
+              "
+            >
+              *Note: Required for gas-to-heat-pump conversions since most old
+              gas tanks have no mains power. Typical cost ranges from $400 to
+              $1,200 depending on switchboard distance.
+            </small>
+          </div>
+        </div>
+
+        <!-- Output Calculations Column -->
+        <div class="results-panel">
+          <div class="card">
+            <h2>Performance Comparison</h2>
+            <table class="comparison-table">
+              <thead>
+                <tr>
+                  <th>Metric</th>
+                  <th>Gas Storage</th>
+                  <th>Heat Pump</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Typical Tank Sizing</td>
+                  <td><span class="gas-text">135L – 170L</span></td>
+                  <td><span class="hp-text">270L – 300L</span></td>
+                </tr>
+                <tr>
+                  <td>Expected Lifespan</td>
+                  <td><span class="gas-text">10 - 15 Years</span></td>
+                  <td><span class="hp-text">7 - 10 Years</span></td>
+                </tr>
+                <tr>
+                  <td>Tank Warranty</td>
+                  <td><span class="gas-text">7 - 10 Years</span></td>
+                  <td><span class="hp-text">Most 5 Years</span></td>
+                </tr>
+                <tr>
+                  <td>Compressor/Electronics Warranty</td>
+                  <td><span class="gas-text">N/A (No Moving Parts)</span></td>
+                  <td><span class="hp-text">1 - 2 Years</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Financials Output Block -->
+          <div class="card">
+            <h2>Annual Run Costs & Recovery Speeds</h2>
+
+            <div class="layout-grid" style="gap: 1rem; margin-bottom: 1.5rem">
+              <div class="metric-block gas">
+                <div class="metric-title">Gas Run Cost</div>
+                <div id="gasCostOut" class="metric-value">$0</div>
+                <div class="metric-desc">Based on ~75% thermal efficiency</div>
+              </div>
+              <div class="metric-block hp">
+                <div class="metric-title">Heat Pump Run Cost</div>
+                <div id="hpCostOut" class="metric-value">$0</div>
+                <div class="metric-desc">Based on average COP of 3.5</div>
+              </div>
+            </div>
+
+            <div class="metric-block" style="margin-bottom: 1.5rem">
+              <div class="metric-title">
+                Full Recovery Reheat Time (If Fully Drained)
+              </div>
+              <p>
+                🔥 <strong>Gas Storage:</strong> Approx.
+                <span id="gasReheat" class="gas-text">--</span> mins
+              </p>
+              <p>
+                🌀 <strong>Heat Pump:</strong> Approx.
+                <span id="hpReheat" class="hp-text">--</span> mins
+              </p>
+              <div class="metric-desc">
+                Assumes a standard 135L Gas Tank vs a 270L Heat Pump Tank.
+              </div>
+            </div>
+
+            <div id="paybackBlock" class="warning-notice" style="display: none">
+              <!-- Dynamically populated payback text -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Universal tracker array for inputs and selectors
+      const inputIds = [
+        "dailyHotWater",
+        "gasTariff",
+        "elecTariff",
+        "gasNetCost",
+        "hpNetCost",
+        "electricalCircuitCost",
+        "climateZone",
+      ];
+
+      function calculateSystemMetrics() {
+        const litres = parseFloat(
+          document.getElementById("dailyHotWater").value,
+        );
+        const gasTariff = parseFloat(
+          document.getElementById("gasTariff").value,
+        );
+        const elecTariff = parseFloat(
+          document.getElementById("elecTariff").value,
+        );
+        const gasCost = parseFloat(document.getElementById("gasNetCost").value);
+        const hpCost = parseFloat(document.getElementById("hpNetCost").value);
+        const circuitCost =
+          parseFloat(document.getElementById("electricalCircuitCost").value) ||
+          0;
+        const climateZone = document.getElementById("climateZone").value;
+
+        // Establish clean global climate baseline profiles
+        let baseCop = 3.5;
+        let hpThermalOutputKw = 4.0; // Standard mid-size compressor baseline output
+        let climateWarningText = "";
+
+        if (climateZone === "hot") {
+          baseCop = 4.2;
+          hpThermalOutputKw = 4.5; // High ambient air heat accelerates recovery
+        } else if (climateZone === "mild") {
+          baseCop = 3.4;
+          hpThermalOutputKw = 4.0; // Standard performance
+        } else if (climateZone === "cold") {
+          baseCop = 2.2;
+          hpThermalOutputKw = 2.2; // Cold air drops compressor output significantly
+          climateWarningText =
+            "❄️ <strong>Cold Climate Notice:</strong> Freezing outdoor temperatures force the heat pump to drop into automated defrost cycles or engage electric element backups. This causes slower winter recovery times and high seasonal power bill spikes.";
+        }
+
+        // Energy required to raise 1 Litre of water by 45°C (e.g. from 15°C tap water up to 60°C tank storage)
+        // This requires 0.19 Megajoules (MJ) of gas energy or 0.053 kWh of electrical energy
+        const dailyMegaJoulesNeeded = litres * 0.19;
+        const dailyKwhNeeded = litres * 0.053;
+
+        // 1. Annual Gas Storage Running Cost (Assuming standard 75% burner efficiency)
+        const annualGasRunCost =
+          (dailyMegaJoulesNeeded / 0.75) * gasTariff * 365.25;
+
+        // 2. Annual Heat Pump Running Cost (Factoring in dynamic climate efficiency)
+        const annualHpRunCost =
+          (dailyKwhNeeded / baseCop) * elecTariff * 365.25;
+
+        // 3. CLEAN RECOVERY SPEED CALCULATION (Fixed Thermodynamic Math)
+        // Formula: (Volume * Specific Heat Capacity of Water * Temp Rise) / (Kilowatts * Seconds in Hour)
+        // Gas Storage: Standard 135L tank driven by an 8.3kW burner capacity
+        const gasReheatTimeMins = Math.round(
+          ((135 * 4.184 * 45) / (8.3 * 3600)) * 60,
+        );
+
+        // Heat Pump: Large 270L tank driven by climate-adjusted compressor output
+        const hpReheatTimeMins = Math.round(
+          ((270 * 4.184 * 45) / (hpThermalOutputKw * 3600)) * 60,
+        );
+
+        // Update Dashboard Text Fields
+        document.getElementById("gasCostOut").textContent =
+          `$${annualGasRunCost.toFixed(0)}/yr`;
+        document.getElementById("hpCostOut").textContent =
+          `$${annualHpRunCost.toFixed(0)}/yr`;
+        document.getElementById("gasReheat").textContent = gasReheatTimeMins;
+        document.getElementById("hpReheat").textContent = hpReheatTimeMins;
+
+        // 4. Financial Capital Payback Calculations
+        const annualSavings = annualGasRunCost - annualHpRunCost;
+        const totalHpUpfront = hpCost + circuitCost;
+        const capitalDifference = totalHpUpfront - gasCost;
+        const paybackBlock = document.getElementById("paybackBlock");
+
+        if (annualSavings > 0 && capitalDifference > 0) {
+          const yearsToBreakEven = capitalDifference / annualSavings;
+          paybackBlock.style.display = "block";
+
+          let finalOutputHTML = "";
+
+          // Global hardware lifespan thresholds (most consumer heat pumps feature a 5-year parts warranty)
+          if (yearsToBreakEven > 5) {
+            finalOutputHTML = `⚠️ <strong>Lifespan Payback Warning:</strong> Including the $${circuitCost} power circuit, this system requires <strong>${yearsToBreakEven.toFixed(1)} years</strong> to break even. Because complex digital controllers and inverter compressors often feature limited warranties (1 to 5 years), the unit risks an expensive component failure before paying for itself.`;
+          } else {
+            finalOutputHTML = `✅ <strong>Payback Period:</strong> The heat pump saves $${annualSavings.toFixed(0)}/yr over gas. Including the power line cost, it will clear its installation premium in <strong>${yearsToBreakEven.toFixed(1)} years</strong>, breaking even safely within standard warranty windows.`;
+          }
+
+          if (climateWarningText !== "") {
+            finalOutputHTML += `<br><br>${climateWarningText}`;
+          }
+          paybackBlock.innerHTML = finalOutputHTML;
+        } else if (annualSavings <= 0) {
+          paybackBlock.style.display = "block";
+          paybackBlock.innerHTML = `❌ <strong>Negative Financial Return:</strong> Based on your current utility rates, the operating cost of a heat pump is higher than gas. Switching to a heat pump here will not save money and is strictly an environmental choice.`;
+        } else {
+          paybackBlock.style.display = "none";
+        }
+
+        // Persist configurations locally in user browser
+        inputIds.forEach((id) =>
+          localStorage.setItem(
+            `hw_calc_${id}`,
+            document.getElementById(id).value,
+          ),
+        );
+      }
+
+      function init() {
+        inputIds.forEach((id) => {
+          const stored = localStorage.getItem(`hw_calc_${id}`);
+          if (stored !== null) document.getElementById(id).value = stored;
+
+          document
+            .getElementById(id)
+            .addEventListener("input", calculateSystemMetrics);
+          document
+            .getElementById(id)
+            .addEventListener("change", calculateSystemMetrics);
+        });
+        calculateSystemMetrics();
+      }
+
+      window.addEventListener("DOMContentLoaded", init);
+    </script>
+  </body>
+</html>
