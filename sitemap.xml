@@ -5,95 +5,136 @@
       xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
             http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
 
-<url>
-  <loc>https://liveramsolutions.net/</loc>
-  <lastmod>2026-04-29T02:19:53+00:00</lastmod>
-  <priority>1.00</priority>
-</url>
-<url>
-  <loc>https://liveramsolutions.net/About/index.html</loc>
-  <lastmod>2026-04-29T02:19:53+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://liveramsolutions.net/Timer%201/</loc>
-  <lastmod>2026-04-29T02:19:53+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://liveramsolutions.net/Timer%204/</loc>
-  <lastmod>2026-04-29T02:19:53+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://liveramsolutions.net/BizCalc/</loc>
-  <lastmod>2026-04-29T02:19:53+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://liveramsolutions.net/Scrabble/</loc>
-  <lastmod>2026-04-29T02:19:53+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://liveramsolutions.net/Darts/</loc>
-  <lastmod>2026-04-29T02:19:53+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://liveramsolutions.net/PW%20Gen/</loc>
-  <lastmod>2026-04-29T02:19:53+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://liveramsolutions.net/Vent%20It/</loc>
-  <lastmod>2026-04-29T02:19:53+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://liveramsolutions.net/Golf%20Card/</loc>
-  <lastmod>2026-04-29T02:19:53+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://liveramsolutions.net/BasicHandicap/</loc>
-  <lastmod>2026-06-05T02:19:53+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://liveramsolutions.net/RunTime/</loc>
-  <lastmod>2026-04-29T02:19:53+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://liveramsolutions.net/JSONCon/</loc>
-  <lastmod>2026-04-29T02:19:53+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://liveramsolutions.net/PDF%20Mixer/</loc>
-  <lastmod>2026-04-29T02:19:53+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://liveramsolutions.net/River/</loc>
-  <lastmod>2026-04-29T02:19:53+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://liveramsolutions.net/Cubic/</loc>
-  <lastmod>2026-04-29T02:19:53+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://liveramsolutions.net/SOS/</loc>
-  <lastmod>2026-05-13T16:30:00+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://liveramsolutions.net/ComingSoon/</loc>
-  <lastmod>2026-06-07T09:30:00+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-
+ <url>
+       <loc>https://liveramsolutions.net/</loc>
+       <lastmod>2026-08-19T11:13:05+00:00</lastmod>
+       <changefreq>daily</changefreq>
+       <priority>1.0000</priority>
+  </url>
+  <url>
+       <loc>https://liveramsolutions.net/About/index.html</loc>
+       <lastmod>2026-08-19T11:13:05+00:00</lastmod>
+       <changefreq>daily</changefreq>
+       <priority>0.8000</priority>
+  </url>
+  <url>
+       <loc>https://liveramsolutions.net/Timer%201/</loc>
+       <lastmod>2026-08-19T11:13:05+00:00</lastmod>
+       <changefreq>daily</changefreq>
+       <priority>0.8000</priority>
+  </url>
+  <url>
+       <loc>https://liveramsolutions.net/BizCalc/</loc>
+       <lastmod>2026-08-19T11:13:05+00:00</lastmod>
+       <changefreq>daily</changefreq>
+       <priority>0.8000</priority>
+  </url>
+  <url>
+       <loc>https://liveramsolutions.net/Scrabble/</loc>
+       <lastmod>2026-08-19T11:13:05+00:00</lastmod>
+       <changefreq>daily</changefreq>
+       <priority>0.8000</priority>
+  </url>
+  <url>
+       <loc>https://liveramsolutions.net/BasicHandicap/</loc>
+       <lastmod>2026-08-19T11:13:05+00:00</lastmod>
+       <changefreq>daily</changefreq>
+       <priority>0.8000</priority>
+  </url>
+  <url>
+       <loc>https://liveramsolutions.net/River/</loc>
+       <lastmod>2026-08-19T11:13:05+00:00</lastmod>
+       <changefreq>daily</changefreq>
+       <priority>0.8000</priority>
+  </url>
+  <url>
+       <loc>https://liveramsolutions.net/TripPlanner/</loc>
+       <lastmod>2026-08-19T11:13:05+00:00</lastmod>
+       <changefreq>daily</changefreq>
+       <priority>0.8000</priority>
+  </url>
+  <url>
+       <loc>https://liveramsolutions.net/ColourPicker/</loc>
+       <lastmod>2026-08-19T11:13:05+00:00</lastmod>
+       <changefreq>daily</changefreq>
+       <priority>0.8000</priority>
+  </url>
+  <url>
+       <loc>https://liveramsolutions.net/AppPage/</loc>
+       <lastmod>2026-08-19T11:13:05+00:00</lastmod>
+       <changefreq>daily</changefreq>
+       <priority>0.8000</priority>
+  </url>
+  <url>
+       <loc>https://liveramsolutions.net/HotWater/</loc>
+       <lastmod>2026-08-19T11:13:05+00:00</lastmod>
+       <changefreq>daily</changefreq>
+       <priority>0.6400</priority>
+  </url>
+  <url>
+       <loc>https://liveramsolutions.net/Darts/</loc>
+       <lastmod>2026-08-19T11:13:05+00:00</lastmod>
+       <changefreq>daily</changefreq>
+       <priority>0.6400</priority>
+  </url>
+  <url>
+       <loc>https://liveramsolutions.net/DiceRoller/</loc>
+       <lastmod>2026-08-19T11:13:05+00:00</lastmod>
+       <changefreq>daily</changefreq>
+       <priority>0.6400</priority>
+  </url>
+  <url>
+       <loc>https://liveramsolutions.net/PW%20Gen/</loc>
+       <lastmod>2026-08-19T11:13:05+00:00</lastmod>
+       <changefreq>daily</changefreq>
+       <priority>0.6400</priority>
+  </url>
+  <url>
+       <loc>https://liveramsolutions.net/Vent%20It/</loc>
+       <lastmod>2026-08-19T11:13:05+00:00</lastmod>
+       <changefreq>daily</changefreq>
+       <priority>0.6400</priority>
+  </url>
+  <url>
+       <loc>https://liveramsolutions.net/Golf%20Card/</loc>
+       <lastmod>2026-08-19T11:13:05+00:00</lastmod>
+       <changefreq>daily</changefreq>
+       <priority>0.6400</priority>
+  </url>
+  <url>
+       <loc>https://liveramsolutions.net/RunTime/</loc>
+       <lastmod>2026-08-19T11:13:05+00:00</lastmod>
+       <changefreq>daily</changefreq>
+       <priority>0.6400</priority>
+  </url>
+  <url>
+       <loc>https://liveramsolutions.net/JSONCon/</loc>
+       <lastmod>2026-08-19T11:13:05+00:00</lastmod>
+       <changefreq>daily</changefreq>
+       <priority>0.6400</priority>
+  </url>
+  <url>
+       <loc>https://liveramsolutions.net/PDF%20Mixer/</loc>
+       <lastmod>2026-08-19T11:13:05+00:00</lastmod>
+       <changefreq>daily</changefreq>
+       <priority>0.6400</priority>
+  </url>
+  <url>
+       <loc>https://liveramsolutions.net/SOS/</loc>
+       <lastmod>2026-08-19T11:13:05+00:00</lastmod>
+       <changefreq>daily</changefreq>
+       <priority>0.6400</priority>
+  </url>
+  <url>
+       <loc>https://liveramsolutions.net/Cubic/</loc>
+       <lastmod>2026-08-19T11:13:05+00:00</lastmod>
+       <changefreq>daily</changefreq>
+       <priority>0.6400</priority>
+  </url>
+  <url>
+       <loc>https://liveramsolutions.net/ComingSoon/</loc>
+       <lastmod>2026-08-19T11:13:05+00:00</lastmod>
+       <changefreq>daily</changefreq>
+       <priority>0.6400</priority>
+  </url>
 </urlset>
