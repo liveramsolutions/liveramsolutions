@@ -1,0 +1,2612 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=yes"
+    />
+    <title>TripPlan - Smart Zoom Planner</title>
+    <!-- Created by Mark Livera 2026 -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <style>
+      :root {
+        --bg-canvas: #0f172a;
+        --bg-surface: #1e293b;
+        --border-low: #334155;
+        --text-primary: #f8fafc;
+        --text-muted: #94a3b8;
+        --brand-cyan: #0ea5e9;
+        --brand-cyan-light: #38bdf8;
+        --status-success: #10b981;
+        --status-danger: #ef4444;
+        --status-planned: #d9c706;
+        --font-sans:
+          system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        --font-mono:
+          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier,
+          monospace;
+        --radius-card: 12px;
+        --radius-input: 6px;
+        --transition-fast: 0.2s ease;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: var(--font-sans);
+      }
+      body {
+        background: var(--bg-canvas);
+        color: var(--text-primary);
+        padding: 1rem;
+        height: 100vh;
+        overflow: hidden;
+      }
+      .app-container {
+        display: grid;
+        grid-template-columns: 380px 1fr;
+        grid-template-rows: auto minmax(0, 1fr);
+
+        gap: 1.2rem;
+        max-width: 1600px;
+        margin: 0 auto;
+        background: rgba(15, 23, 42, 0.86);
+        border: 1px solid var(--border-low);
+        border-radius: var(--radius-card);
+        box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.35);
+        overflow: hidden;
+        padding: 0.8rem;
+
+        height: calc(100vh - 2rem);
+        min-height: 0;
+
+        align-items: stretch;
+      }
+      .sidebar {
+        background: rgba(30, 41, 59, 0.96);
+        backdrop-filter: blur(4px);
+        border-radius: var(--radius-card);
+        padding: 0 0.75rem 1rem 0.75rem;
+        box-shadow: 0 12px 18px -8px rgba(0, 0, 0, 0.05);
+        border: 1px solid var(--border-low);
+
+        height: 100%;
+        min-height: 0;
+
+        overflow-y: auto;
+        scroll-behavior: smooth;
+      }
+      .sidebar,
+      .map-container {
+        min-height: 0;
+      }
+      .itinerary-header {
+        position: sticky;
+        top: 0;
+        background: rgba(30, 41, 59, 0.98);
+        backdrop-filter: blur(8px);
+        z-index: 10;
+        padding: 0.7rem 0 0.7rem 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+      }
+      .itinerary-title-group {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-shrink: 1;
+        min-width: 0;
+      }
+      .itinerary-title-group h2 {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: var(--brand-cyan-light);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0;
+        white-space: nowrap;
+      }
+      .button-group-inline {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-shrink: 0;
+      }
+      .compact-toggle-btn {
+        background: var(--bg-canvas);
+        color: var(--text-primary);
+        border: none;
+        font-size: 0.75rem;
+        padding: 0.35rem 1rem;
+        border-radius: var(--radius-input);
+        font-weight: 500;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        min-width: 88px;
+        justify-content: center;
+      }
+      .compact-toggle-btn:hover {
+        background: var(--border-low);
+        color: var(--brand-cyan-light);
+        transform: translateY(-1px);
+      }
+      .compact-toggle-btn i {
+        font-size: 0.7rem;
+      }
+      .compact-toggle-btn.primary {
+        background: var(--brand-cyan);
+        color: var(--bg-canvas);
+      }
+      .compact-toggle-btn.primary:hover {
+        background: var(--brand-cyan-light);
+      }
+      .add-leg-btn {
+        background: var(--brand-cyan);
+        color: var(--bg-canvas);
+        border: none;
+        font-size: 0.75rem;
+        padding: 0.35rem 1rem;
+        border-radius: var(--radius-input);
+        font-weight: 600;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        min-width: 88px;
+        justify-content: center;
+      }
+      .add-leg-btn:hover {
+        background: var(--brand-cyan-light);
+        transform: translateY(-1px);
+      }
+      .add-leg-btn i {
+        margin-right: 0px;
+        font-size: 0.7rem;
+      }
+      .add-leg-btn .mobile-text {
+        display: none;
+      }
+      .add-leg-btn .full-text {
+        display: inline;
+      }
+      .app-version {
+        position: fixed;
+        bottom: 6px;
+        right: 10px;
+        font-size: 10px;
+        color: var(--text-muted);
+        font-family: var(--font-mono);
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        z-index: 9999;
+        pointer-events: none;
+        user-select: none;
+      }
+      .header-bar {
+        grid-column: 1 / -1;
+        background: rgba(30, 41, 59, 0.96);
+        backdrop-filter: blur(4px);
+        border-radius: var(--radius-card);
+        padding: 0.5rem 1.2rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.8rem;
+        border: 1px solid var(--border-low);
+      }
+      .title {
+        font-size: 1.7rem;
+        font-weight: 700;
+        background: linear-gradient(
+          135deg,
+          var(--brand-cyan-light),
+          var(--status-success)
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .title i {
+        background: none;
+        color: var(--brand-cyan);
+        margin-right: 8px;
+      }
+      .holiday-name-area {
+        display: flex;
+        gap: 0.6rem;
+        align-items: center;
+        background: var(--bg-canvas);
+        padding: 0.2rem 1rem;
+        border-radius: var(--radius-input);
+        border: 1px solid var(--border-low);
+      }
+      #holidayNameInput {
+        border: 1px solid var(--border-low);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        padding: 0.3rem 0.7rem;
+        border-radius: var(--radius-input);
+        width: 280px;
+        font-size: 0.85rem;
+      }
+      button,
+      .file-label {
+        background: var(--bg-canvas);
+        border: 1px solid var(--border-low);
+        padding: 0.4rem 1rem;
+        border-radius: var(--radius-input);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        color: var(--text-primary);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.8rem;
+      }
+      button:hover,
+      .file-label:hover {
+        background: var(--border-low);
+        transform: translateY(-2px);
+        border-color: var(--brand-cyan);
+      }
+      .itinerary-item {
+        background: var(--bg-surface);
+        border-radius: var(--radius-card);
+        padding: 0.8rem;
+        margin-bottom: 0.8rem;
+        border-left: 5px solid var(--status-planned);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .itinerary-item.leg-booked {
+        border-left-color: var(--status-success);
+      }
+      .itinerary-item:hover {
+        background: #26364f;
+        transform: translateX(2px);
+      }
+      .itinerary-item.leg-planned:hover {
+        border-left-color: #f59e0b;
+      }
+      .itinerary-item.leg-booked:hover {
+        border-left-color: #34d399;
+      }
+      .itinerary-item.highlight-new,
+      .compact-item.highlight-new {
+        animation: highlightFlash 1.2s ease-in-out;
+        border-left-color: var(--brand-cyan);
+      }
+      @keyframes highlightFlash {
+        0% {
+          background-color: #0b3048;
+          border-left-width: 8px;
+          box-shadow: 0 0 0 2px var(--brand-cyan);
+        }
+        50% {
+          background-color: #164e63;
+          border-left-width: 8px;
+          box-shadow: 0 0 0 4px var(--brand-cyan-light);
+        }
+        100% {
+          background-color: var(--bg-surface);
+          border-left-width: 5px;
+          box-shadow: none;
+        }
+      }
+      .flex-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        margin-bottom: 0.6rem;
+        align-items: flex-end;
+      }
+      .field {
+        flex: 1;
+        min-width: 90px;
+        position: relative;
+      }
+      .field label {
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: var(--brand-cyan-light);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-bottom: 3px;
+        cursor: pointer;
+      }
+      .autocomplete-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-low);
+        border-radius: var(--radius-input);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+        max-height: 220px;
+        overflow-y: auto;
+        z-index: 1000;
+        margin-top: 4px;
+      }
+      .autocomplete-item {
+        padding: 0.6rem 0.75rem;
+        cursor: pointer;
+        font-size: 0.8rem;
+        border-bottom: 1px solid var(--border-low);
+        transition: background 0.1s ease;
+        color: var(--text-primary);
+      }
+      .autocomplete-item:last-child {
+        border-bottom: none;
+      }
+      .autocomplete-item:hover,
+      .autocomplete-item.selected {
+        background: var(--border-low);
+      }
+      .calendar-icon {
+        font-size: 0.7rem;
+        color: var(--brand-cyan-light);
+        cursor: pointer;
+        opacity: 0.7;
+      }
+      .calendar-icon:hover {
+        opacity: 1;
+      }
+      input,
+      select {
+        width: 100%;
+        padding: 0.45rem;
+        border-radius: var(--radius-input);
+        border: 1px solid var(--border-low);
+        background: var(--bg-canvas);
+        color: var(--text-primary);
+        font-size: 0.8rem;
+      }
+      .date-display-input {
+        cursor: pointer;
+        background: var(--bg-canvas);
+      }
+
+      .hidden-date-input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .nights-badge {
+        background: var(--bg-canvas);
+        padding: 0.45rem 0.6rem;
+        border-radius: var(--radius-input);
+        font-size: 0.8rem;
+        font-weight: bold;
+        color: var(--status-success);
+        text-align: center;
+        border: 1px solid var(--border-low);
+      }
+      .remove-btn {
+        background: rgba(239, 68, 68, 0.12);
+        color: var(--status-danger);
+        padding: 0.2rem 0.6rem;
+        font-size: 0.7rem;
+        cursor: pointer;
+      }
+      .remove-btn:hover {
+        background: rgba(239, 68, 68, 0.22);
+      }
+      .notes-btn {
+        background: rgba(16, 61, 185, 0.448);
+        color: var(--status-success);
+        padding: 0.2rem 0.6rem;
+        font-size: 0.7rem;
+        cursor: pointer;
+        border: 1px solid rgba(16, 129, 185, 0.35);
+      }
+      .notes-btn:hover {
+        background: rgba(16, 185, 129, 0.22);
+        border-color: var(--status-success);
+      }
+      .notes-indicator {
+        font-size: 0.65rem;
+        margin-left: 4px;
+        color: var(--status-success);
+      }
+      .booking-toggle-btn {
+        padding: 0.2rem 0.6rem;
+        font-size: 0.7rem;
+        cursor: pointer;
+        border-radius: var(--radius-input);
+        border: 1px solid transparent;
+        transition: background-color var(--transition-fast);
+      }
+      .booking-toggle-btn.planned {
+        background: rgba(217, 119, 6, 0.12);
+        color: var(--status-planned);
+        border-color: rgba(217, 119, 6, 0.35);
+      }
+      .booking-toggle-btn.planned:hover {
+        background: rgba(217, 119, 6, 0.22);
+      }
+      .booking-toggle-btn.booked {
+        background: rgba(16, 185, 129, 0.12);
+        color: var(--status-success);
+        border-color: rgba(16, 185, 129, 0.35);
+      }
+      .booking-toggle-btn.booked:hover {
+        background: rgba(16, 185, 129, 0.22);
+      }
+      .map-container {
+        background: var(--bg-canvas);
+        border-radius: var(--radius-card);
+        overflow: hidden;
+        border: 1px solid var(--border-low);
+        position: relative;
+        display: flex;
+        flex-direction: column;
+
+        height: 100%;
+        min-height: 0;
+      }
+
+      #map {
+        width: 100%;
+        height: 100%;
+        background: var(--bg-canvas);
+
+        flex: 1;
+        min-height: 0;
+      }
+      .map-toolbar {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 1000;
+      }
+      .map-control-btn {
+        background: rgba(15, 23, 42, 0.72);
+        backdrop-filter: blur(4px);
+        border: none;
+        border-radius: 0 8px 0 8px;
+        padding: 6px 12px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        letter-spacing: 0.3px;
+        font-family: var(--font-mono);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        border-top: 1px solid rgba(14, 165, 233, 0.35);
+        border-right: 1px solid rgba(14, 165, 233, 0.35);
+      }
+      .map-control-btn i {
+        font-size: 0.65rem;
+        color: var(--brand-cyan-light);
+      }
+      .map-control-btn:hover {
+        background: rgba(15, 23, 42, 0.9);
+        color: var(--brand-cyan-light);
+        transform: translateY(-1px);
+      }
+      .cost-summary {
+        background: var(--bg-canvas);
+        border: 1px solid var(--border-low);
+        border-radius: var(--radius-card);
+        padding: 0.7rem;
+        margin-top: 0.8rem;
+        font-weight: bold;
+        color: var(--text-primary);
+        font-size: 0.8rem;
+      }
+      .cost-summary div {
+        margin: 4px 0;
+        display: flex;
+        justify-content: space-between;
+      }
+      .cost-summary .total {
+        border-top: 2px solid var(--brand-cyan);
+        margin-top: 6px;
+        padding-top: 6px;
+        font-size: 0.95rem;
+      }
+      .loading-indicator {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: var(--bg-surface);
+        color: var(--brand-cyan-light);
+        padding: 8px 16px;
+        border-radius: var(--radius-input);
+        z-index: 1000;
+        display: none;
+        font-size: 0.8rem;
+      }
+      .metro-zoom-hint {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        background: rgba(15, 23, 42, 0.72);
+        backdrop-filter: blur(4px);
+        color: var(--text-primary);
+        padding: 6px 12px;
+        border-radius: 0 8px 0 0;
+        font-size: 0.7rem;
+        font-weight: 500;
+        z-index: 1000;
+        border: none;
+        border-top: 1px solid rgba(14, 165, 233, 0.35);
+        border-right: 1px solid rgba(14, 165, 233, 0.35);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--font-mono);
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+        letter-spacing: 0.3px;
+        opacity: 0;
+        visibility: hidden;
+      }
+      .metro-zoom-hint i {
+        font-size: 0.7rem;
+        color: var(--brand-cyan-light);
+      }
+      .metro-zoom-hint.visible {
+        opacity: 1;
+        visibility: visible;
+      }
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.72);
+        backdrop-filter: blur(3px);
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s;
+      }
+      .modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+      .notes-modal {
+        background: var(--bg-surface);
+        border-radius: var(--radius-card);
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 25px 40px rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border-low);
+        overflow: hidden;
+        animation: modalFadeIn 0.2s ease;
+      }
+      @keyframes modalFadeIn {
+        from {
+          transform: scale(0.95);
+          opacity: 0;
+        }
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      .modal-header {
+        background: var(--bg-canvas);
+        padding: 1rem 1.2rem;
+        border-bottom: 2px solid var(--border-low);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .modal-header h3 {
+        font-size: 1.2rem;
+        color: var(--brand-cyan-light);
+      }
+      .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        cursor: pointer;
+        color: var(--text-muted);
+        padding: 0;
+      }
+      .modal-body {
+        padding: 1.2rem;
+      }
+      .modal-body textarea {
+        width: 100%;
+        border: 1px solid var(--border-low);
+        border-radius: var(--radius-input);
+        padding: 0.8rem;
+        font-size: 0.9rem;
+        background: var(--bg-canvas);
+        color: var(--text-primary);
+        font-family: inherit;
+        resize: vertical;
+        min-height: 180px;
+      }
+      .modal-footer {
+        padding: 0.8rem 1.2rem 1.2rem;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.8rem;
+      }
+      .modal-footer button {
+        padding: 0.5rem 1.2rem;
+      }
+      .btn-save-note {
+        background: var(--brand-cyan);
+        color: var(--bg-canvas);
+        border: none;
+      }
+      .btn-save-note:hover {
+        background: var(--brand-cyan-light);
+        transform: none;
+      }
+      .leg-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .compact-item {
+        background: var(--bg-surface);
+        border-radius: var(--radius-card);
+        padding: 0.6rem 0.8rem;
+        margin-bottom: 0.65rem;
+        border-left: 4px solid var(--status-planned);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .compact-item.leg-booked {
+        border-left-color: var(--status-success);
+      }
+      .compact-item:hover {
+        background: #26364f;
+        transform: translateX(2px);
+        border-left-width: 6px;
+      }
+      .compact-item.leg-planned:hover {
+        border-left-color: #f59e0b;
+      }
+      .compact-item.leg-booked:hover {
+        border-left-color: #34d399;
+      }
+      .compact-header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 0.4rem;
+      }
+      .compact-leg-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--bg-canvas);
+        padding: 0.2rem 0.7rem;
+        border-radius: var(--radius-input);
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--brand-cyan-light);
+      }
+      .compact-leg-badge i {
+        font-size: 0.7rem;
+      }
+      .compact-action-buttons {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .compact-action-buttons button {
+        padding: 0.2rem 0.55rem;
+        font-size: 0.65rem;
+        background: var(--bg-canvas);
+      }
+      .compact-action-buttons .notes-btn {
+        background: rgba(16, 185, 129, 0.12);
+      }
+      .compact-action-buttons .booking-toggle-btn.planned {
+        background: rgba(217, 119, 6, 0.12);
+      }
+      .compact-action-buttons .booking-toggle-btn.booked {
+        background: rgba(16, 185, 129, 0.12);
+      }
+      .compact-route-line {
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: var(--text-primary);
+        margin-bottom: 0.3rem;
+        word-break: break-word;
+      }
+      .compact-dates {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        margin-bottom: 0.25rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .compact-costs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        margin-top: 0.25rem;
+        font-size: 0.7rem;
+        color: var(--status-success);
+      }
+      .compact-costs span i {
+        width: 14px;
+        margin-right: 2px;
+      }
+      .print-map-report {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        max-width: 900px;
+        visibility: hidden;
+        pointer-events: none;
+        z-index: -1;
+        background: white;
+        color: #111827;
+      }
+      .print-map-full,
+      .print-leg-map {
+        width: 100%;
+        height: 360px;
+        border: 1px solid #ccc;
+        margin: 0.5rem 0 1rem;
+      }
+      .print-leg {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        margin: 0 0 1rem;
+      }
+      .print-leg-row {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      .print-leg h3,
+      .print-map-report h2 {
+        margin: 0 0 0.35rem;
+      }
+      @media (max-width: 850px) {
+        .app-container {
+          grid-template-columns: 1fr;
+        }
+        .map-container {
+          min-height: 300px;
+          aspect-ratio: auto;
+          height: 50vh;
+        }
+        #map {
+          min-height: 250px;
+        }
+        .sidebar {
+          padding: 0 0.6rem 1rem 0.6rem;
+        }
+        .itinerary-header {
+          gap: 0.5rem;
+        }
+        .itinerary-title-group h2 {
+          font-size: 1rem;
+        }
+        .compact-toggle-btn {
+          font-size: 0.7rem;
+          padding: 0.3rem 0.7rem;
+          min-width: 70px;
+        }
+        .add-leg-btn {
+          font-size: 0.7rem;
+          padding: 0.3rem 0.7rem;
+          min-width: 70px;
+        }
+        .add-leg-btn i {
+          margin-right: 3px;
+        }
+        .add-leg-btn .full-text {
+          display: none;
+        }
+        .add-leg-btn .mobile-text {
+          display: inline;
+        }
+        .button-group-inline {
+          gap: 0.5rem;
+        }
+        .map-control-btn {
+          padding: 4px 8px;
+          font-size: 0.65rem;
+        }
+      }
+      @media (max-width: 600px) {
+        body {
+          padding: 0.35rem;
+          height: auto;
+          min-height: 100svh;
+          overflow: auto;
+        }
+        .app-container {
+          display: flex;
+          flex-direction: column;
+          gap: 0.55rem;
+          height: auto;
+          min-height: 100svh;
+          padding: 0.45rem;
+          overflow: visible;
+        }
+        .header-bar {
+          order: 1;
+          padding: 0.55rem;
+          gap: 0.5rem;
+          align-items: stretch;
+        }
+        .title {
+          width: 100%;
+          font-size: 1.25rem;
+          line-height: 1.2;
+        }
+        .holiday-name-area {
+          width: 100%;
+          padding: 0.4rem;
+          gap: 0.4rem;
+        }
+        .holiday-name-area label {
+          flex: 0 0 auto;
+          font-size: 0.78rem;
+        }
+        #holidayNameInput {
+          flex: 1;
+          width: auto;
+          min-width: 0;
+          font-size: 0.82rem;
+        }
+        .button-group {
+          width: 100%;
+          display: grid !important;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 0.35rem !important;
+        }
+        .button-group button,
+        .button-group .file-label {
+          justify-content: center;
+          padding: 0.45rem 0.25rem;
+          min-width: 0;
+          font-size: 0.72rem;
+        }
+        .map-container {
+          order: 2;
+          height: 38svh;
+          min-height: 260px;
+          border-radius: var(--radius-card);
+        }
+        #map {
+          min-height: 260px;
+        }
+        .sidebar {
+          order: 3;
+          height: auto;
+          max-height: none;
+          overflow: visible;
+          padding: 0 0.5rem 0.7rem;
+        }
+        .itinerary-header {
+          padding: 0.55rem 0;
+          align-items: flex-start;
+        }
+        .itinerary-title-group h2 {
+          font-size: 0.95rem;
+        }
+        .button-group-inline {
+          gap: 0.35rem;
+        }
+        .compact-toggle-btn,
+        .add-leg-btn {
+          min-width: 0;
+          padding: 0.35rem 0.5rem;
+          font-size: 0.68rem;
+        }
+        .itinerary-item {
+          padding: 0.65rem;
+          margin-bottom: 0.6rem;
+        }
+        .flex-row {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 0.5rem;
+        }
+        .field {
+          min-width: 0;
+        }
+        .field label {
+          font-size: 0.6rem;
+        }
+        input,
+        select,
+        .nights-badge {
+          min-height: 38px;
+          font-size: 0.78rem;
+        }
+        .leg-actions {
+          gap: 0.35rem;
+        }
+        .notes-btn,
+        .booking-toggle-btn,
+        .remove-btn {
+          padding: 0.25rem 0.45rem;
+          font-size: 0.65rem;
+        }
+        .compact-item {
+          padding: 0.55rem 0.6rem;
+        }
+        .compact-header-row {
+          align-items: flex-start;
+        }
+        .compact-action-buttons {
+          width: 100%;
+          justify-content: flex-end;
+        }
+        .compact-route-line {
+          font-size: 0.8rem;
+        }
+        .compact-costs {
+          gap: 0.45rem;
+        }
+        .map-toolbar {
+          top: 8px;
+          right: 8px;
+        }
+        .metro-zoom-hint {
+          max-width: calc(100% - 16px);
+          font-size: 0.62rem;
+        }
+        .app-version {
+          display: none;
+        }
+      }
+      @media (max-width: 420px) {
+        .button-group {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .flex-row {
+          grid-template-columns: 1fr;
+        }
+        .map-container {
+          height: 34svh;
+          min-height: 220px;
+        }
+        #map {
+          min-height: 220px;
+        }
+      }
+      @media print {
+        body {
+          background: white;
+          padding: 0;
+          margin: 0;
+        }
+        .app-container {
+          display: none !important;
+        }
+        .print-map-report {
+          position: static;
+          left: auto;
+          top: auto;
+          display: block;
+          visibility: visible;
+          pointer-events: auto;
+          z-index: auto;
+          width: 100%;
+          max-width: none;
+          padding: 0.25in;
+        }
+        .print-map-full {
+          height: 420px;
+          page-break-after: always;
+        }
+        .print-leg-map {
+          height: 320px;
+        }
+        .print-leg-row {
+          page-break-after: always;
+        }
+        .print-leg-row:last-child {
+          page-break-after: auto;
+        }
+        .header-bar,
+        .map-container,
+        .loading-indicator,
+        .metro-zoom-hint,
+        .modal-overlay,
+        .itinerary-header button,
+        .compact-action-buttons button,
+        .remove-btn,
+        .notes-btn,
+        .leg-actions button,
+        #toggleViewBtn,
+        .add-leg-btn,
+        .calendar-icon,
+        .field label,
+        input,
+        select,
+        .nights-badge,
+        .compact-action-buttons,
+        .map-toolbar {
+          display: none !important;
+        }
+        .sidebar {
+          max-height: none;
+          overflow: visible;
+          background: white;
+          box-shadow: none;
+          width: 100%;
+        }
+        .app-container {
+          display: none !important;
+          padding: 0;
+          margin: 0;
+          background: white;
+        }
+        .itinerary-item,
+        .compact-item {
+          border: 1px solid #ccc;
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+        .cost-summary {
+          border: 1px solid #ccc;
+          background: #f9f9f9;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-container">
+      <div class="header-bar">
+        <div class="title">
+          <i class="fas fa-globe-americas"></i> Trip Planner
+        </div>
+        <div class="holiday-name-area">
+          <label><i class="fas fa-umbrella-beach"></i> Holiday:</label>
+          <input
+            type="text"
+            id="holidayNameInput"
+            placeholder="e.g., Norway Fjords"
+            value=""
+          />
+        </div>
+        <div class="button-group" style="display: flex; gap: 0.5rem">
+          <button id="saveJsonBtn"><i class="fas fa-save"></i> Save</button>
+          <label for="loadFileInput" class="file-label"
+            ><i class="fas fa-folder-open"></i> Load</label
+          >
+          <input
+            type="file"
+            id="loadFileInput"
+            accept=".json"
+            style="display: none"
+          />
+          <button id="printBtn"><i class="fas fa-print"></i> Print</button>
+          <button id="resetBtn"><i class="fas fa-trash-alt"></i> Reset</button>
+        </div>
+      </div>
+      <div class="sidebar">
+        <div class="itinerary-header">
+          <div class="itinerary-title-group">
+            <h2><i class="fas fa-map-marked-alt"></i> Itinerary</h2>
+          </div>
+          <div class="button-group-inline">
+            <button id="toggleViewBtn" class="compact-toggle-btn">
+              <i class="fas fa-compress-alt"></i> Compact
+            </button>
+            <button id="addSegmentBtn" class="add-leg-btn">
+              <i class="fas fa-plus-circle"></i>
+              <span class="full-text">Add Leg</span>
+              <span class="mobile-text">Add</span>
+            </button>
+          </div>
+        </div>
+        <div id="itineraryList"></div>
+        <div class="cost-summary" id="costSummary"></div>
+      </div>
+      <div class="map-container">
+        <div id="map"></div>
+        <div class="map-toolbar">
+          <button id="zoomToFitBtn" class="map-control-btn">
+            <i class="fas fa-expand-alt"></i> Zoom to Fit
+          </button>
+        </div>
+        <div class="metro-zoom-hint" id="metroZoomHint">
+          <i class="fas fa-map-pin"></i> Click any pin → Metro zoom
+        </div>
+      </div>
+    </div>
+    <div class="loading-indicator" id="loadingIndicator">
+      <i class="fas fa-fan fa-spin"></i> Loading routes...
+    </div>
+    <div id="printMapReport" class="print-map-report"></div>
+    <div id="notesModal" class="modal-overlay">
+      <div class="notes-modal">
+        <div class="modal-header">
+          <h3><i class="fas fa-sticky-note"></i> Leg Notes</h3>
+          <button class="modal-close" id="closeModalBtn">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <textarea
+            id="notesTextarea"
+            placeholder="Add any notes, booking links, confirmation numbers, or reminders...&#10;&#10;Example:&#10;🏨 Hotel confirmation: ABC123&#10;✈️ Flight booking: https://...&#10;🚗 Rental car reference: ..."
+          ></textarea>
+        </div>
+        <div class="modal-footer">
+          <button id="cancelNotesBtn" class="file-label">Cancel</button>
+          <button id="saveNotesBtn" class="btn-save-note">
+            <i class="fas fa-save"></i> Save Notes
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let holidayName = "";
+      let segments = [];
+      let nextId = 1;
+      let map, routeLayer, markersLayer;
+      let routeCache = new Map();
+      let geocodeCache = new Map();
+      let railwayCache = new Map();
+      let maritimeCache = new Map();
+      let isDrawingRoutes = false;
+      let drawRequested = false;
+      const METRO_ZOOM_LEVEL = 15;
+      let currentNotesLegId = null;
+      let compactViewActive = false;
+
+      let autocompleteCache = new Map();
+      let activeAutocompleteRequests = new Map();
+      let globalAutocompleteId = 0;
+
+      function closeAutocompleteDropdownForField(fieldDiv) {
+        const existing = fieldDiv.querySelector(".autocomplete-dropdown");
+        if (existing) existing.remove();
+      }
+
+      function attachAutocompleteToField(
+        fieldDiv,
+        inputElement,
+        segmentId,
+        fieldType,
+      ) {
+        closeAutocompleteDropdownForField(fieldDiv);
+        let currentSuggestions = [];
+        let selectedIndex = -1;
+        let dropdownVisible = false;
+        const dropdown = document.createElement("div");
+        dropdown.className = "autocomplete-dropdown";
+        dropdown.style.display = "none";
+        fieldDiv.appendChild(dropdown);
+
+        function renderDropdown(suggestions) {
+          if (!suggestions || suggestions.length === 0) {
+            dropdown.style.display = "none";
+            dropdownVisible = false;
+            dropdown.innerHTML = "";
+            return;
+          }
+          dropdown.style.display = "block";
+          dropdownVisible = true;
+          dropdown.innerHTML = "";
+          suggestions.forEach((sug, idx) => {
+            const item = document.createElement("div");
+            item.className =
+              "autocomplete-item" + (idx === selectedIndex ? " selected" : "");
+            item.textContent =
+              sug.display_name || sug.name || sug.place_name || sug;
+            item.addEventListener("click", (e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              const selectedName =
+                sug.display_name || sug.name || sug.place_name || sug;
+              inputElement.value = selectedName;
+              dropdown.style.display = "none";
+              dropdownVisible = false;
+              closeAutocompleteDropdownForField(fieldDiv);
+              window.updateSegmentField(segmentId, fieldType, selectedName);
+            });
+            dropdown.appendChild(item);
+          });
+          if (selectedIndex >= 0 && selectedIndex < dropdown.children.length) {
+            dropdown.children[selectedIndex].classList.add("selected");
+            dropdown.children[selectedIndex].scrollIntoView({
+              block: "nearest",
+            });
+          }
+        }
+
+        async function fetchAutocomplete(query) {
+          if (!query || query.length < 3) return [];
+          const cacheKey = query.toLowerCase().trim();
+          if (autocompleteCache.has(cacheKey))
+            return autocompleteCache.get(cacheKey);
+          const thisRequestId = ++globalAutocompleteId;
+          activeAutocompleteRequests.set(
+            fieldType + "_" + segmentId,
+            thisRequestId,
+          );
+          try {
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=6&addressdetails=0`;
+            const res = await fetch(url, {
+              headers: { "User-Agent": "WanderPlan/2.0" },
+            });
+            const data = await res.json();
+            const storedReqId = activeAutocompleteRequests.get(
+              fieldType + "_" + segmentId,
+            );
+            if (storedReqId !== thisRequestId) return [];
+            if (data && Array.isArray(data)) {
+              autocompleteCache.set(cacheKey, data);
+              return data;
+            }
+            return [];
+          } catch (err) {
+            return [];
+          }
+        }
+
+        let debounceTimer = null;
+        inputElement.addEventListener("input", (e) => {
+          const query = e.target.value;
+          if (debounceTimer) clearTimeout(debounceTimer);
+          if (query.length < 3) {
+            dropdown.style.display = "none";
+            dropdownVisible = false;
+            return;
+          }
+          debounceTimer = setTimeout(async () => {
+            const suggestions = await fetchAutocomplete(query);
+            const storedReqId = activeAutocompleteRequests.get(
+              fieldType + "_" + segmentId,
+            );
+            if (
+              storedReqId !== globalAutocompleteId &&
+              storedReqId !== undefined
+            )
+              return;
+            currentSuggestions = suggestions;
+            selectedIndex = -1;
+            renderDropdown(currentSuggestions);
+          }, 350);
+        });
+
+        inputElement.addEventListener("keydown", (e) => {
+          if (dropdownVisible && currentSuggestions.length > 0) {
+            if (e.key === "ArrowDown") {
+              e.preventDefault();
+              selectedIndex = (selectedIndex + 1) % currentSuggestions.length;
+              renderDropdown(currentSuggestions);
+              return;
+            } else if (e.key === "ArrowUp") {
+              e.preventDefault();
+              selectedIndex =
+                (selectedIndex - 1 + currentSuggestions.length) %
+                currentSuggestions.length;
+              renderDropdown(currentSuggestions);
+              return;
+            } else if (e.key === "Enter") {
+              e.preventDefault();
+              if (selectedIndex >= 0 && currentSuggestions[selectedIndex]) {
+                const selectedName =
+                  currentSuggestions[selectedIndex].display_name ||
+                  currentSuggestions[selectedIndex].name ||
+                  currentSuggestions[selectedIndex].place_name ||
+                  currentSuggestions[selectedIndex];
+                inputElement.value = selectedName;
+                dropdown.style.display = "none";
+                dropdownVisible = false;
+                closeAutocompleteDropdownForField(fieldDiv);
+                window.updateSegmentField(segmentId, fieldType, selectedName);
+              } else {
+                dropdown.style.display = "none";
+                dropdownVisible = false;
+                closeAutocompleteDropdownForField(fieldDiv);
+                inputElement.blur();
+              }
+              return;
+            } else if (e.key === "Escape") {
+              dropdown.style.display = "none";
+              dropdownVisible = false;
+              return;
+            }
+          }
+          if (e.key === "Tab") {
+            if (dropdownVisible) {
+              dropdown.style.display = "none";
+              dropdownVisible = false;
+              closeAutocompleteDropdownForField(fieldDiv);
+            }
+            return;
+          }
+        });
+
+        inputElement.addEventListener("blur", () => {
+          setTimeout(() => {
+            if (!fieldDiv.contains(document.activeElement)) {
+              dropdown.style.display = "none";
+              dropdownVisible = false;
+            }
+          }, 150);
+        });
+
+        document.addEventListener("click", function onClickOutside(e) {
+          if (!fieldDiv.contains(e.target)) {
+            dropdown.style.display = "none";
+            dropdownVisible = false;
+          }
+        });
+      }
+
+      function formatDateToDMY(dateString) {
+        if (!dateString) return "";
+        const date = parseISODate(dateString);
+        if (!date) return dateString;
+        return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")}/${date.getFullYear().toString().slice(-2)}`;
+      }
+      function parseISODate(dateString) {
+        if (!dateString) return null;
+        const parts = dateString.split("-").map(Number);
+        if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
+        return new Date(parts[0], parts[1] - 1, parts[2]);
+      }
+      function formatDateToYYYYMMDD(date) {
+        if (!date) return "";
+        const d = date instanceof Date ? date : parseISODate(date);
+        if (!d || isNaN(d.getTime())) return "";
+        return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getDate().toString().padStart(2, "0")}`;
+      }
+      function parseDMYToDate(dmyString) {
+        if (!dmyString) return "";
+        const parts = dmyString.split("/");
+        if (parts.length === 3) {
+          let year = parts[2].trim();
+          if (year.length === 2) year = `20${parseInt(year, 10)}`;
+          return `${year}-${parts[1].trim().padStart(2, "0")}-${parts[0].trim().padStart(2, "0")}`;
+        }
+        return dmyString;
+      }
+      function calculateNights(arrival, departure) {
+        const a = parseISODate(arrival);
+        const d = parseISODate(departure);
+        if (!a || !d || d <= a) return 0;
+        return Math.round((d - a) / (1000 * 60 * 60 * 24));
+      }
+      function addDays(dateString, days) {
+        const d = parseISODate(dateString);
+        if (!d) return "";
+        d.setDate(d.getDate() + days);
+        return formatDateToYYYYMMDD(d);
+      }
+      function recalculateDatesFrom(index) {
+        for (let i = index; i < segments.length; i++) {
+          const seg = segments[i];
+
+          const existingNights =
+            calculateNights(seg.arrivalDate, seg.departureDate) || 3;
+
+          if (i > 0) {
+            const previous = segments[i - 1];
+
+            if (!seg.arrivalLocked) {
+              seg.arrivalDate = previous.departureDate;
+              seg.departureDate = addDays(seg.arrivalDate, existingNights);
+            }
+          }
+
+          if (!seg.departureLocked) {
+            seg.departureDate = addDays(seg.arrivalDate, existingNights);
+          }
+
+          if (seg.departureDate < seg.arrivalDate) {
+            seg.departureDate = seg.arrivalDate;
+          }
+
+          seg.nights = calculateNights(seg.arrivalDate, seg.departureDate);
+        }
+      }
+      async function geocodePlace(placeName) {
+        if (!placeName?.trim() || placeName === "TBA") return null;
+        const cacheKey = placeName.toLowerCase().trim();
+        if (geocodeCache.has(cacheKey)) return geocodeCache.get(cacheKey);
+        try {
+          const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(placeName)}&limit=1`;
+          const res = await fetch(url, {
+            headers: { "User-Agent": "WanderPlan/2.0" },
+          });
+          const data = await res.json();
+          if (data?.length) {
+            const result = {
+              lat: parseFloat(data[0].lat),
+              lng: parseFloat(data[0].lon),
+            };
+            geocodeCache.set(cacheKey, result);
+            return result;
+          }
+        } catch (e) {
+          console.warn(e);
+        }
+        return null;
+      }
+      function generateGreatCircleArc(
+        startLat,
+        startLng,
+        endLat,
+        endLng,
+        flipCurve = false,
+      ) {
+        const points = [];
+        const steps = 30;
+        const lat1 = (startLat * Math.PI) / 180,
+          lon1 = (startLng * Math.PI) / 180;
+        const lat2 = (endLat * Math.PI) / 180,
+          lon2 = (endLng * Math.PI) / 180;
+        const d = Math.acos(
+          Math.sin(lat1) * Math.sin(lat2) +
+            Math.cos(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1),
+        );
+        for (let i = 0; i <= steps; i++) {
+          const f = i / steps;
+          const A = Math.sin((1 - f) * d) / Math.sin(d);
+          const B = Math.sin(f * d) / Math.sin(d);
+          const x =
+            A * Math.cos(lat1) * Math.cos(lon1) +
+            B * Math.cos(lat2) * Math.cos(lon2);
+          const y =
+            A * Math.cos(lat1) * Math.sin(lon1) +
+            B * Math.cos(lat2) * Math.sin(lon2);
+          const z = A * Math.sin(lat1) + B * Math.sin(lat2);
+          points.push([
+            (Math.atan2(z, Math.hypot(x, y)) * 180) / Math.PI,
+            (Math.atan2(y, x) * 180) / Math.PI,
+          ]);
+        }
+        return flipCurve ? flipArcCurve(points) : points;
+      }
+      function flipArcCurve(points) {
+        if (points.length < 3) return points;
+        const [startLat, startLng] = points[0];
+        const [endLat, endLng] = points[points.length - 1];
+        const deltaLat = endLat - startLat;
+        const deltaLng = endLng - startLng;
+        const span = deltaLat * deltaLat + deltaLng * deltaLng || 1;
+        return points.map(([lat, lng], i) => {
+          if (i === 0 || i === points.length - 1) return [lat, lng];
+          const t =
+            ((lat - startLat) * deltaLat + (lng - startLng) * deltaLng) / span;
+          const projLat = startLat + t * deltaLat;
+          const projLng = startLng + t * deltaLng;
+          return [2 * projLat - lat, 2 * projLng - lng];
+        });
+      }
+      function shouldFlipArcForTravelDirection(
+        startLat,
+        startLng,
+        endLat,
+        endLng,
+        points,
+      ) {
+        const deltaLat = endLat - startLat;
+        const deltaLng = endLng - startLng;
+        const midIdx = Math.floor(points.length / 2);
+        const [midLat, midLng] = points[midIdx];
+        const bulgeLat = midLat - (startLat + endLat) / 2;
+        const bulgeLng = midLng - (startLng + endLng) / 2;
+        if (Math.abs(deltaLng) >= Math.abs(deltaLat)) {
+          return deltaLng < 0 ? bulgeLat > 0 : bulgeLat < 0;
+        }
+        return deltaLat > 0 ? bulgeLng > 0 : bulgeLng < 0;
+      }
+      function buildGreatCircleRoute(startLat, startLng, endLat, endLng) {
+        const points = generateGreatCircleArc(
+          startLat,
+          startLng,
+          endLat,
+          endLng,
+          false,
+        );
+        const flip = shouldFlipArcForTravelDirection(
+          startLat,
+          startLng,
+          endLat,
+          endLng,
+          points,
+        );
+        return flip ? flipArcCurve(points) : points;
+      }
+      function shouldFlipArcForMode(travelMode) {
+        return (
+          travelMode === "air" ||
+          travelMode === "ferry" ||
+          travelMode === "ship"
+        );
+      }
+      async function fetchRoadRoute(startLat, startLng, endLat, endLng) {
+        const url = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`;
+        try {
+          const res = await fetch(url);
+          const data = await res.json();
+          if (data.routes?.[0]?.geometry?.coordinates) {
+            return data.routes[0].geometry.coordinates.map((c) => [c[1], c[0]]);
+          }
+        } catch (e) {}
+        return null;
+      }
+      async function fetchRailwayRoute(startLat, startLng, endLat, endLng) {
+        const cacheKey = `${Math.floor(startLat * 10)}_${Math.floor(startLng * 10)}_${Math.floor(endLat * 10)}_${Math.floor(endLng * 10)}`;
+        if (railwayCache.has(cacheKey)) return railwayCache.get(cacheKey);
+        const buffer = 0.15;
+        const bbox = `${Math.min(startLat, endLat) - buffer},${Math.min(startLng, endLng) - buffer},${Math.max(startLat, endLat) + buffer},${Math.max(startLng, endLng) + buffer}`;
+        const query = `[out:json][timeout:10];(way["railway"="rail"](${bbox});way["railway"="light_rail"](${bbox});way["railway"="subway"](${bbox}););out geom;`;
+        try {
+          const res = await fetch("https://overpass-api.de/api/interpreter", {
+            method: "POST",
+            body: query,
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          });
+          const data = await res.json();
+          if (data.elements && data.elements.length > 0) {
+            let bestRoute = null,
+              bestScore = 0;
+            for (let element of data.elements) {
+              if (element.geometry && element.geometry.length > 2) {
+                const coords = element.geometry.map((g) => [g.lat, g.lon]);
+                let minDistToStart = Infinity,
+                  minDistToEnd = Infinity;
+                for (let point of coords) {
+                  const distToStart = Math.hypot(
+                    point[0] - startLat,
+                    point[1] - startLng,
+                  );
+                  const distToEnd = Math.hypot(
+                    point[0] - endLat,
+                    point[1] - endLng,
+                  );
+                  if (distToStart < minDistToStart)
+                    minDistToStart = distToStart;
+                  if (distToEnd < minDistToEnd) minDistToEnd = distToEnd;
+                }
+                if (minDistToStart < 0.2 && minDistToEnd < 0.2) {
+                  const score =
+                    coords.length - minDistToStart * 5 - minDistToEnd * 5;
+                  if (score > bestScore) {
+                    bestScore = score;
+                    bestRoute = coords;
+                  }
+                }
+              }
+            }
+            if (bestRoute) {
+              railwayCache.set(cacheKey, bestRoute);
+              return bestRoute;
+            }
+          }
+        } catch (e) {}
+        railwayCache.set(cacheKey, null);
+        return null;
+      }
+      async function fetchMaritimeRoute(
+        startLat,
+        startLng,
+        endLat,
+        endLng,
+        routeType = "ferry",
+      ) {
+        const cacheKey = `${routeType}_${Math.floor(startLat * 10)}_${Math.floor(startLng * 10)}_${Math.floor(endLat * 10)}_${Math.floor(endLng * 10)}`;
+        if (maritimeCache.has(cacheKey)) return maritimeCache.get(cacheKey);
+        const buffer = 0.5;
+        const bbox = `${Math.min(startLat, endLat) - buffer},${Math.min(startLng, endLng) - buffer},${Math.max(startLat, endLat) + buffer},${Math.max(startLng, endLng) + buffer}`;
+        let query =
+          routeType === "ferry"
+            ? `[out:json][timeout:15];(way["route"="ferry"](${bbox});relation["route"="ferry"](${bbox});way["ferry"="yes"](${bbox}););out geom;`
+            : `[out:json][timeout:15];(way["route"="ferry"](${bbox});relation["route"="ferry"](${bbox});way["ship"="yes"](${bbox});way["route"="shipping"](${bbox}););out geom;`;
+        try {
+          const res = await fetch("https://overpass-api.de/api/interpreter", {
+            method: "POST",
+            body: query,
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          });
+          const data = await res.json();
+          if (data.elements && data.elements.length > 0) {
+            let bestRoute = null,
+              bestScore = 0;
+            for (let element of data.elements) {
+              if (element.geometry && element.geometry.length > 2) {
+                const coords = element.geometry.map((g) => [g.lat, g.lon]);
+                let minDistToStart = Infinity,
+                  minDistToEnd = Infinity;
+                for (let point of coords) {
+                  const distToStart = Math.hypot(
+                    point[0] - startLat,
+                    point[1] - startLng,
+                  );
+                  const distToEnd = Math.hypot(
+                    point[0] - endLat,
+                    point[1] - endLng,
+                  );
+                  if (distToStart < minDistToStart)
+                    minDistToStart = distToStart;
+                  if (distToEnd < minDistToEnd) minDistToEnd = distToEnd;
+                }
+                if (minDistToStart < 0.5 && minDistToEnd < 0.5) {
+                  const score =
+                    coords.length - minDistToStart * 2 - minDistToEnd * 2;
+                  if (score > bestScore) {
+                    bestScore = score;
+                    bestRoute = coords;
+                  }
+                }
+              }
+            }
+            if (bestRoute) {
+              maritimeCache.set(cacheKey, bestRoute);
+              return bestRoute;
+            }
+          }
+        } catch (e) {}
+        maritimeCache.set(cacheKey, null);
+        return null;
+      }
+      async function getTrainRoute(startLat, startLng, endLat, endLng) {
+        const rail = await fetchRailwayRoute(
+          startLat,
+          startLng,
+          endLat,
+          endLng,
+        );
+        if (rail) return rail;
+        const road = await fetchRoadRoute(startLat, startLng, endLat, endLng);
+        return (
+          road || generateGreatCircleArc(startLat, startLng, endLat, endLng)
+        );
+      }
+      async function getFerryRoute(startLat, startLng, endLat, endLng) {
+        const ferry = await fetchMaritimeRoute(
+          startLat,
+          startLng,
+          endLat,
+          endLng,
+          "ferry",
+        );
+        return (
+          ferry || buildGreatCircleRoute(startLat, startLng, endLat, endLng)
+        );
+      }
+      async function getShipRoute(startLat, startLng, endLat, endLng) {
+        const ship = await fetchMaritimeRoute(
+          startLat,
+          startLng,
+          endLat,
+          endLng,
+          "ship",
+        );
+        return (
+          ship || buildGreatCircleRoute(startLat, startLng, endLat, endLng)
+        );
+      }
+      async function getRouteForSegment(segment, segmentIndex = -1) {
+        if (
+          !segment.latStart ||
+          !segment.latDest ||
+          segment.travelMode === "tba"
+        )
+          return null;
+        const arcMode = shouldFlipArcForMode(segment.travelMode);
+        const cacheKey = `route_${segment.id}_${segment.travelMode}`;
+        if (routeCache.has(cacheKey)) return routeCache.get(cacheKey);
+        let route = null;
+        const start = { lat: segment.latStart, lng: segment.lngStart };
+        const end = { lat: segment.latDest, lng: segment.lngDest };
+        if (segment.travelMode === "road")
+          route = await fetchRoadRoute(start.lat, start.lng, end.lat, end.lng);
+        else if (segment.travelMode === "train")
+          route = await getTrainRoute(start.lat, start.lng, end.lat, end.lng);
+        else if (segment.travelMode === "ferry")
+          route = await getFerryRoute(start.lat, start.lng, end.lat, end.lng);
+        else if (segment.travelMode === "ship")
+          route = await getShipRoute(start.lat, start.lng, end.lat, end.lng);
+        else
+          route = buildGreatCircleRoute(
+            start.lat,
+            start.lng,
+            end.lat,
+            end.lng,
+          );
+        if (!route)
+          route = arcMode
+            ? buildGreatCircleRoute(start.lat, start.lng, end.lat, end.lng)
+            : generateGreatCircleArc(start.lat, start.lng, end.lat, end.lng);
+        routeCache.set(cacheKey, route);
+        return route;
+      }
+      function getRouteStyle(segment) {
+        if (segment.travelMode === "ferry") {
+          return { color: "#0EA5E9", dashArray: "8,8", weight: 4 };
+        }
+        if (segment.travelMode === "ship") {
+          return { color: "#0EA5E9", dashArray: "8,8", weight: 5 };
+        }
+        if (segment.travelMode === "air") {
+          return { color: "#E9C46A", dashArray: "10,8", weight: 3 };
+        }
+        if (segment.travelMode === "road") {
+          return { color: "#F4A261", weight: 4 };
+        }
+        if (segment.travelMode === "train") {
+          return { color: "#E76F51", dashArray: "8,5", weight: 5 };
+        }
+        return { color: "#3A86FF", weight: 4 };
+      }
+      async function updateSegmentCoordinates(segment) {
+        let changed = false;
+        if (segment.startName?.trim()) {
+          const coords = await geocodePlace(segment.startName);
+          if (
+            coords &&
+            (segment.latStart !== coords.lat || segment.lngStart !== coords.lng)
+          ) {
+            segment.latStart = coords.lat;
+            segment.lngStart = coords.lng;
+            changed = true;
+          }
+        }
+        if (segment.destName?.trim()) {
+          const coords = await geocodePlace(segment.destName);
+          if (
+            coords &&
+            (segment.latDest !== coords.lat || segment.lngDest !== coords.lng)
+          ) {
+            segment.latDest = coords.lat;
+            segment.lngDest = coords.lng;
+            changed = true;
+          }
+        }
+        return changed;
+      }
+      function zoomToLegPoints(segment) {
+        if (!map) return;
+        const points = [];
+        if (segment.latStart && segment.lngStart)
+          points.push([segment.latStart, segment.lngStart]);
+        if (segment.latDest && segment.lngDest)
+          points.push([segment.latDest, segment.lngDest]);
+        if (points.length >= 2) {
+          map.fitBounds(L.latLngBounds(points), { padding: [40, 40] });
+        } else if (points.length === 1) {
+          map.setView(points[0], METRO_ZOOM_LEVEL);
+        }
+      }
+      function zoomToFitAllPoints() {
+        if (!map) return;
+        const points = [];
+        segments.forEach((seg) => {
+          if (
+            Number.isFinite(Number(seg.latStart)) &&
+            Number.isFinite(Number(seg.lngStart))
+          )
+            points.push([seg.latStart, seg.lngStart]);
+          if (
+            Number.isFinite(Number(seg.latDest)) &&
+            Number.isFinite(Number(seg.lngDest))
+          )
+            points.push([seg.latDest, seg.lngDest]);
+        });
+        if (points.length === 0) return;
+        if (points.length === 1) map.setView(points[0], METRO_ZOOM_LEVEL);
+        else
+          map.fitBounds(L.latLngBounds(points), {
+            padding: [10, 10],
+            maxZoom: 12,
+            animate: true,
+          });
+      }
+      function zoomToMetroLevel(lat, lng) {
+        if (map) map.setView([lat, lng], METRO_ZOOM_LEVEL);
+      }
+      function updateMetroHintVisibility() {
+        const hint = document.getElementById("metroZoomHint");
+        if (hint && map)
+          map.getZoom() < METRO_ZOOM_LEVEL
+            ? hint.classList.add("visible")
+            : hint.classList.remove("visible");
+      }
+      function openNotesModal(legId) {
+        currentNotesLegId = legId;
+        const leg = segments.find((s) => s.id === legId);
+        document.getElementById("notesTextarea").value = leg?.notes || "";
+        document.getElementById("notesModal").classList.add("active");
+      }
+      function closeNotesModal() {
+        document.getElementById("notesModal").classList.remove("active");
+        currentNotesLegId = null;
+      }
+      function saveCurrentNotes() {
+        if (currentNotesLegId !== null) {
+          const leg = segments.find((s) => s.id === currentNotesLegId);
+          if (leg) {
+            leg.notes = document.getElementById("notesTextarea").value;
+            renderItinerary();
+            saveToLocalStorage();
+          }
+        }
+        closeNotesModal();
+      }
+      function getLegStatusClass(seg) {
+        return seg.bookingStatus === "booked" ? "leg-booked" : "leg-planned";
+      }
+      function getBookingToggleHtml(seg) {
+        const isBooked = seg.bookingStatus === "booked";
+        const label = isBooked ? "Booked" : "Planned";
+        const icon = isBooked ? "fa-check-circle" : "fa-clock";
+        const stateClass = isBooked ? "booked" : "planned";
+        return `<button class="booking-toggle-btn ${stateClass}" title="Toggle planned/booked" onclick="event.stopPropagation(); toggleLegBookingStatus(${seg.id})"><i class="fas ${icon}"></i> ${label}</button>`;
+      }
+      function toggleLegBookingStatus(id) {
+        const seg = segments.find((s) => s.id === id);
+        if (!seg) return;
+        seg.bookingStatus =
+          seg.bookingStatus === "booked" ? "planned" : "booked";
+        renderItinerary();
+        saveToLocalStorage();
+      }
+      function migrateSegmentFields() {
+        for (let seg of segments) {
+          if (seg.notes === undefined) seg.notes = "";
+          if (!seg.bookingStatus) seg.bookingStatus = "planned";
+        }
+      }
+      function scrollToLegElement(legId) {
+        setTimeout(() => {
+          const el = document.querySelector(
+            `.itinerary-item[data-leg-id="${legId}"], .compact-item[data-leg-id="${legId}"]`,
+          );
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "start" });
+            el.classList.add("highlight-new");
+            setTimeout(() => el.classList.remove("highlight-new"), 1200);
+          }
+        }, 100);
+      }
+      async function addSegment() {
+        const defaultStart =
+          segments.length > 0 ? segments[segments.length - 1].destName : "";
+        const today = new Date();
+        let arrivalDate = today.toISOString().slice(0, 10);
+        let departureDate = new Date(today.setDate(today.getDate() + 3))
+          .toISOString()
+          .slice(0, 10);
+        if (
+          segments.length > 0 &&
+          segments[segments.length - 1].departureDate
+        ) {
+          arrivalDate = segments[segments.length - 1].departureDate;
+          const arrive = new Date(arrivalDate);
+          departureDate = new Date(arrive.setDate(arrive.getDate() + 3))
+            .toISOString()
+            .slice(0, 10);
+        }
+        const newSeg = {
+          id: nextId++,
+          startName: defaultStart || "",
+          travelMode: "tba",
+          destName: "",
+          arrivalDate,
+          departureDate,
+          arrivalLocked: false,
+          departureLocked: false,
+          nights: calculateNights(arrivalDate, departureDate),
+          transportCost: 0,
+          accommodationCost: 0,
+          spendingPerDay: 0,
+          latStart: null,
+          lngStart: null,
+          latDest: null,
+          lngDest: null,
+          notes: "",
+          bookingStatus: "planned",
+        };
+        segments.push(newSeg);
+        routeCache.clear();
+        renderItinerary();
+        scrollToLegElement(newSeg.id);
+        await updateSegmentCoordinates(newSeg);
+        renderItinerary();
+        await drawAllRoutes();
+        if (newSeg.latStart && newSeg.lngStart)
+          zoomToMetroLevel(newSeg.latStart, newSeg.lngStart);
+        saveToLocalStorage();
+      }
+      function removeSegment(id) {
+        segments = segments.filter((s) => s.id !== id);
+        routeCache.clear();
+        renderItinerary();
+        drawAllRoutes();
+        saveToLocalStorage();
+      }
+      async function updateSegmentField(id, field, value) {
+        const seg = segments.find((s) => s.id === id);
+        if (!seg) return;
+        if (field === "arrivalDateDisplay") {
+          value = parseDMYToDate(value);
+          field = "arrivalDate";
+        }
+
+        if (field === "departureDateDisplay") {
+          value = parseDMYToDate(value);
+          field = "departureDate";
+        }
+
+        seg[field] = value;
+        const currentIndex = segments.findIndex((s) => s.id === id);
+
+        if (field === "arrivalDate") {
+          seg.arrivalLocked = true;
+
+          if (currentIndex > 0) {
+            const previous = segments[currentIndex - 1];
+            previous.departureDate = seg.arrivalDate;
+            if (previous.departureDate < previous.arrivalDate) {
+              previous.departureDate = previous.arrivalDate;
+            }
+            previous.nights = calculateNights(
+              previous.arrivalDate,
+              previous.departureDate,
+            );
+          }
+
+          recalculateDatesFrom(currentIndex);
+        }
+
+        if (field === "departureDate") {
+          seg.departureLocked = true;
+
+          if (seg.departureDate < seg.arrivalDate) {
+            seg.departureDate = seg.arrivalDate;
+          }
+
+          recalculateDatesFrom(currentIndex + 1);
+        }
+        if (field === "arrivalDate" || field === "departureDate")
+          seg.nights = calculateNights(seg.arrivalDate, seg.departureDate);
+        if (field === "travelMode") routeCache.clear();
+        renderItinerary();
+
+        if (field === "startName" || field === "destName") {
+          if (await updateSegmentCoordinates(seg)) {
+            routeCache.clear();
+            await drawAllRoutes();
+            if (
+              field === "destName" &&
+              seg.latStart &&
+              seg.lngStart &&
+              seg.latDest &&
+              seg.lngDest
+            ) {
+              zoomToLegPoints(seg);
+            } else if (field === "startName" && seg.latStart && seg.lngStart) {
+              zoomToMetroLevel(seg.latStart, seg.lngStart);
+            } else if (seg.latStart && seg.lngStart) {
+              zoomToMetroLevel(seg.latStart, seg.lngStart);
+            } else if (seg.latDest && seg.lngDest) {
+              zoomToMetroLevel(seg.latDest, seg.lngDest);
+            }
+          }
+        } else {
+          await drawAllRoutes();
+        }
+        saveToLocalStorage();
+      }
+      function onLegClick(segment) {
+        if (
+          segment.latStart &&
+          segment.lngStart &&
+          segment.latDest &&
+          segment.lngDest
+        ) {
+          zoomToLegPoints(segment);
+        } else if (segment.latStart && segment.lngStart) {
+          zoomToMetroLevel(segment.latStart, segment.lngStart);
+        } else if (segment.latDest && segment.lngDest) {
+          zoomToMetroLevel(segment.latDest, segment.lngDest);
+        }
+      }
+      function updateCostSummary() {
+        let totalTransport = 0,
+          totalAccommodation = 0,
+          totalSpending = 0,
+          totalNights = 0;
+        for (let seg of segments) {
+          totalTransport += seg.transportCost || 0;
+          totalAccommodation += seg.accommodationCost || 0;
+          const nights = seg.nights || 0;
+          totalSpending += (seg.spendingPerDay || 0) * nights;
+          totalNights += nights;
+        }
+        document.getElementById("costSummary").innerHTML =
+          `<div><span>✈️ Travel:</span> <strong>$${totalTransport.toFixed(2)}</strong></div><div><span>🏨 Accommodation:</span> <strong>$${totalAccommodation.toFixed(2)}</strong></div><div><span>💰 Spending (${totalNights} nights):</span> <strong>$${totalSpending.toFixed(2)}</strong></div><div class="total"><span>🎯 TOTAL TRIP:</span> <strong>$${(totalTransport + totalAccommodation + totalSpending).toFixed(2)}</strong></div>`;
+      }
+      function renderItinerary() {
+        const container = document.getElementById("itineraryList");
+        if (!container) return;
+        if (segments.length === 0) {
+          container.innerHTML = `<div style="padding:1rem;text-align:center;">✨ Click "Add Leg" to start</div>`;
+          updateCostSummary();
+          return;
+        }
+        if (compactViewActive) {
+          let html = "";
+          segments.forEach((seg, idx) => {
+            const modeIcons = {
+              tba: "⏳",
+              road: "🚗",
+              train: "🚆",
+              air: "✈️",
+              ferry: "⛴️",
+              ship: "🚢",
+            };
+            const modeIcon = modeIcons[seg.travelMode] || "❓";
+            const modeFull =
+              {
+                tba: "TBA",
+                road: "Road",
+                train: "Train",
+                air: "Air",
+                ferry: "Ferry",
+                ship: "Ship",
+              }[seg.travelMode] || "";
+            const hasNotes = seg.notes && seg.notes.trim() ? true : false;
+            html += `<div class="compact-item ${getLegStatusClass(seg)}" data-leg-id="${seg.id}"><div class="compact-header-row"><span class="compact-leg-badge"><i class="fas fa-route"></i> Leg ${idx + 1} <span style="margin-left:4px; font-size:0.7rem;">${modeIcon} ${modeFull}</span></span><div class="compact-action-buttons">${hasNotes ? `<span style="font-size:0.7rem; color:#D97706;"><i class="fas fa-paperclip"></i></span>` : ""}${getBookingToggleHtml(seg)}<button class="notes-btn" onclick="event.stopPropagation(); openNotesModal(${seg.id})"><i class="fas fa-sticky-note"></i> Notes</button><button class="remove-btn" onclick="event.stopPropagation(); removeSegment(${seg.id})"><i class="fas fa-trash-alt"></i> Remove</button></div></div><div class="compact-route-line">📍 ${escapeHtml(seg.startName || "?")} → ${escapeHtml(seg.destName || "?")}</div><div class="compact-dates"><span>📅 ${formatDateToDMY(seg.arrivalDate)} → ${formatDateToDMY(seg.departureDate)}</span><span>🌙 ${seg.nights || 0} nights</span></div><div class="compact-costs"><span><i class="fas fa-dollar-sign"></i> Travel $${(seg.transportCost || 0).toFixed(0)}</span><span><i class="fas fa-bed"></i> Accom $${(seg.accommodationCost || 0).toFixed(0)}</span><span><i class="fas fa-coffee"></i> Daily $${(seg.spendingPerDay || 0).toFixed(0)}</span></div></div>`;
+          });
+          container.innerHTML = html;
+          document.querySelectorAll(".compact-item").forEach((el) => {
+            const id = parseInt(el.dataset.legId);
+            const seg = segments.find((s) => s.id === id);
+            if (seg)
+              el.addEventListener("click", (e) => {
+                if (
+                  e.target.tagName !== "BUTTON" &&
+                  !e.target.closest(".notes-btn") &&
+                  !e.target.closest(".booking-toggle-btn") &&
+                  !e.target.closest(".remove-btn")
+                )
+                  onLegClick(seg);
+              });
+          });
+        } else {
+          let html = "";
+          segments.forEach((seg, idx) => {
+            const notesIconHtml =
+              seg.notes && seg.notes.trim()
+                ? `<span class="notes-indicator" title="Notes available"><i class="fas fa-paperclip"></i></span>`
+                : "";
+            html += `<div class="itinerary-item ${getLegStatusClass(seg)}" data-leg-id="${seg.id}"><div style="display:flex; justify-content:space-between; margin-bottom:6px;"><strong>Leg ${idx + 1} ${notesIconHtml}</strong><div class="leg-actions">${getBookingToggleHtml(seg)}<button class="notes-btn" onclick="event.stopPropagation(); openNotesModal(${seg.id})"><i class="fas fa-sticky-note"></i> Notes</button><button class="remove-btn" onclick="event.stopPropagation(); removeSegment(${seg.id})"><i class="fas fa-trash-alt"></i> Remove</button></div></div><div class="flex-row"><div class="field"><label>📍 From</label><input type="text" id="start_input_${seg.id}" value="${escapeHtml(seg.startName)}" placeholder="City"></div><div class="field"><label>🏝️ To</label><input type="text" id="dest_input_${seg.id}" value="${escapeHtml(seg.destName)}" placeholder="Destination"></div></div><div class="flex-row">
+
+<div class="field">
+    <label>
+        <i class="fas fa-calendar-alt calendar-icon"></i> Arrival
+    </label>
+
+<input
+    type="text"
+    id="arrival_display_${seg.id}"
+    class="date-display-input"
+    value="${formatDateToDMY(seg.arrivalDate)}"
+    placeholder="dd/mm/yy"
+    readonly
+
+    onclick="
+        const picker = document.getElementById('arrival_date_${seg.id}');
+        if (picker.showPicker) {
+            picker.showPicker();
+        } else {
+            picker.click();
+        }
+        event.stopPropagation();
+    "
+>
+
+    <input
+        type="date"
+        id="arrival_date_${seg.id}"
+        value="${seg.arrivalDate}"
+        class="hidden-date-input"
+        onchange="
+            updateSegmentField(${seg.id}, 'arrivalDate', this.value);
+            document.getElementById('arrival_display_${seg.id}').value = formatDateToDMY(this.value);
+        "
+    >
+</div>
+
+<div class="field">
+    <label>
+        <i class="fas fa-calendar-alt calendar-icon"></i> Departure
+    </label>
+
+    <input
+        type="text"
+        id="departure_display_${seg.id}"
+        class="date-display-input"
+        value="${formatDateToDMY(seg.departureDate)}"
+        placeholder="dd/mm/yy"
+        readonly
+        onclick="
+            const picker = document.getElementById('departure_date_${seg.id}');
+            if (picker.showPicker) {
+                picker.showPicker();
+            } else {
+                picker.click();
+            }
+            event.stopPropagation();
+        "
+    >
+
+    <input
+        type="date"
+        id="departure_date_${seg.id}"
+        value="${seg.departureDate}"
+        class="hidden-date-input"
+        onchange="
+            updateSegmentField(${seg.id}, 'departureDate', this.value);
+            document.getElementById('departure_display_${seg.id}').value = formatDateToDMY(this.value);
+        "
+    >
+</div>
+                    <div class="field"><label>🌙 Nights</label><div class="nights-badge">${seg.nights || 0} nights</div></div></div><div class="flex-row"><div class="field">
+                        <label>🚗 Mode</label><select onchange="updateSegmentField(${seg.id}, 'travelMode', this.value)" onclick="event.stopPropagation()">${[
+                          ["tba", "⏳ TBA"],
+                          ["road", "🚗 Road"],
+                          ["train", "🚆 Train"],
+                          ["air", "✈️ Air"],
+                          ["ferry", "⛴️ Ferry"],
+                          ["ship", "🚢 Ship"],
+                        ]
+                          .map(
+                            ([val, label]) =>
+                              `<option value="${val}" ${seg.travelMode === val ? "selected" : ""}>${label}</option>`,
+                          )
+                          .join(
+                            "",
+                          )}</select></div><div class="field"><label>🚀 Transport ($)</label><input type="number" value="${seg.transportCost}" step="10" onchange="updateSegmentField(${seg.id}, 'transportCost', parseFloat(this.value)||0)" onclick="event.stopPropagation()"></div></div><div class="flex-row"><div class="field"><label>🏨 Accom ($)</label><input type="number" value="${seg.accommodationCost}" step="10" onchange="updateSegmentField(${seg.id}, 'accommodationCost', parseFloat(this.value)||0)" onclick="event.stopPropagation()"></div><div class="field"><label>💸 Daily Spend ($)</label><input type="number" value="${seg.spendingPerDay || 0}" step="10" onchange="updateSegmentField(${seg.id}, 'spendingPerDay', parseFloat(this.value)||0)" onclick="event.stopPropagation()"></div></div></div>`;
+          });
+          container.innerHTML = html;
+          segments.forEach((seg) => {
+            const fromInput = document.getElementById(`start_input_${seg.id}`);
+            const toInput = document.getElementById(`dest_input_${seg.id}`);
+            if (fromInput) {
+              fromInput.addEventListener("change", (e) => {
+                updateSegmentField(seg.id, "startName", e.target.value);
+              });
+              const fieldDiv = fromInput.closest(".field");
+              attachAutocompleteToField(
+                fieldDiv,
+                fromInput,
+                seg.id,
+                "startName",
+              );
+            }
+            if (toInput) {
+              toInput.addEventListener("change", (e) => {
+                updateSegmentField(seg.id, "destName", e.target.value);
+              });
+              const fieldDiv = toInput.closest(".field");
+              attachAutocompleteToField(fieldDiv, toInput, seg.id, "destName");
+            }
+            const el = document.querySelector(
+              `.itinerary-item[data-leg-id="${seg.id}"]`,
+            );
+            if (el)
+              el.addEventListener("click", (e) => {
+                if (
+                  e.target.tagName !== "BUTTON" &&
+                  e.target.tagName !== "INPUT" &&
+                  e.target.tagName !== "SELECT" &&
+                  !e.target.closest(".remove-btn") &&
+                  !e.target.closest(".notes-btn") &&
+                  !e.target.closest(".booking-toggle-btn")
+                )
+                  onLegClick(seg);
+              });
+          });
+        }
+        updateCostSummary();
+        window.formatDateToDMY = formatDateToDMY;
+      }
+      function initMap() {
+        map = L.map("map").setView([20, 0], 2);
+        L.tileLayer(
+          "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+          { attribution: "Tiles &copy; Esri", maxZoom: 18 },
+        ).addTo(map);
+        L.tileLayer(
+          "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",
+          {
+            attribution: "&copy; OSM & CARTO",
+            maxZoom: 18,
+            subdomains: "abcd",
+          },
+        ).addTo(map);
+        map.on("zoomend", updateMetroHintVisibility);
+        routeLayer = L.layerGroup().addTo(map);
+        markersLayer = L.layerGroup().addTo(map);
+        setTimeout(updateMetroHintVisibility, 100);
+      }
+      async function drawAllRoutes() {
+        if (isDrawingRoutes) {
+          drawRequested = true;
+          return;
+        }
+
+        isDrawingRoutes = true;
+        drawRequested = false;
+
+        const loading = document.getElementById("loadingIndicator");
+        loading.style.display = "flex";
+
+        try {
+          markersLayer.clearLayers();
+
+          const validSegments = segments.filter(
+            (s) => s.latStart && s.lngStart && s.latDest && s.lngDest,
+          );
+
+          for (let seg of validSegments) {
+            L.marker([seg.latStart, seg.lngStart])
+              .on("click", () => zoomToMetroLevel(seg.latStart, seg.lngStart))
+              .bindTooltip(seg.startName)
+              .addTo(markersLayer);
+
+            L.marker([seg.latDest, seg.lngDest])
+              .on("click", () => zoomToMetroLevel(seg.latDest, seg.lngDest))
+              .bindTooltip(seg.destName)
+              .addTo(markersLayer);
+          }
+
+          const routePromises = validSegments
+            .filter((s) => s.travelMode !== "tba")
+            .map(async (seg) => {
+              const segmentIndex = segments.findIndex((s) => s.id === seg.id);
+              const route = await getRouteForSegment(seg, segmentIndex);
+
+              if (!route) return null;
+
+              const style = { ...getRouteStyle(seg), opacity: 0.9 };
+
+              return {
+                route,
+                style,
+                popup: `${seg.travelMode.toUpperCase()}<br>${seg.startName} → ${seg.destName}`,
+              };
+            });
+
+          const results = await Promise.all(routePromises);
+
+          routeLayer.clearLayers();
+
+          for (let r of results) {
+            if (r) {
+              L.polyline(r.route, r.style).addTo(routeLayer).bindPopup(r.popup);
+            }
+          }
+
+          updateMetroHintVisibility();
+        } finally {
+          loading.style.display = "none";
+          isDrawingRoutes = false;
+
+          if (drawRequested) {
+            drawAllRoutes();
+          }
+        }
+      }
+      function saveToLocalStorage() {
+        sessionStorage.setItem(
+          "wanderplan_session",
+          JSON.stringify({ holidayName, segments, nextId, version: 28 }),
+        );
+      }
+      async function loadFromLocalStorage() {
+        const raw = sessionStorage.getItem("wanderplan_session");
+        if (raw) {
+          const data = JSON.parse(raw);
+          if (data.segments) segments = data.segments;
+          if (data.nextId) nextId = data.nextId;
+          if (data.holidayName) holidayName = data.holidayName;
+          document.getElementById("holidayNameInput").value = holidayName;
+          migrateSegmentFields();
+          renderItinerary();
+          for (let seg of segments) await updateSegmentCoordinates(seg);
+          renderItinerary();
+          await drawAllRoutes();
+          setTimeout(() => {
+            map?.invalidateSize();
+            zoomToFitAllPoints();
+          }, 150);
+        }
+      }
+      function exportToJSON() {
+        const tripName =
+          document.getElementById("holidayNameInput").value || "Holiday";
+        const data = {
+          holidayName: tripName,
+          segments,
+          nextId,
+          exported: new Date().toISOString(),
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], {
+          type: "application/json",
+        });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `${tripName.replace(/\s+/g, "_")}_plan.json`;
+        a.click();
+        URL.revokeObjectURL(blob);
+      }
+      function importJSON(file) {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          const data = JSON.parse(e.target.result);
+          if (data.segments) segments = data.segments;
+          if (data.nextId) nextId = data.nextId;
+          if (data.holidayName) {
+            holidayName = data.holidayName;
+            document.getElementById("holidayNameInput").value = holidayName;
+          }
+          migrateSegmentFields();
+          routeCache.clear();
+          railwayCache.clear();
+          maritimeCache.clear();
+          renderItinerary();
+          for (let seg of segments) await updateSegmentCoordinates(seg);
+          renderItinerary();
+          await drawAllRoutes();
+          saveToLocalStorage();
+        };
+        reader.readAsText(file);
+      }
+      function resetPlanner() {
+        if (confirm("⚠️ RESET ALL? This will delete your itinerary.")) {
+          sessionStorage.removeItem("wanderplan_session");
+          segments = [];
+          nextId = 1;
+          holidayName = "";
+          document.getElementById("holidayNameInput").value = holidayName;
+          routeCache.clear();
+          railwayCache.clear();
+          maritimeCache.clear();
+          renderItinerary();
+          if (map) {
+            markersLayer?.clearLayers();
+            routeLayer?.clearLayers();
+            map.setView([20, 0], 2);
+          }
+        }
+      }
+      function toggleCompactView() {
+        compactViewActive = !compactViewActive;
+        const toggleBtn = document.getElementById("toggleViewBtn");
+        if (compactViewActive) {
+          toggleBtn.innerHTML = '<i class="fas fa-expand-alt"></i> Detailed';
+          toggleBtn.classList.add("primary");
+        } else {
+          toggleBtn.innerHTML = '<i class="fas fa-compress-alt"></i> Compact';
+          toggleBtn.classList.remove("primary");
+        }
+        renderItinerary();
+      }
+      let printMaps = [];
+      let printMapFitData = [];
+      function collectMapBoundsPoints(start, end, route) {
+        const points = [];
+        if (Array.isArray(start)) points.push(start);
+        if (Array.isArray(end)) points.push(end);
+        if (Array.isArray(route)) route.forEach((pt) => points.push(pt));
+        return points;
+      }
+      function fitPrintMapToPoints(targetMap, points, options = {}) {
+        if (!targetMap || !points.length) return;
+        const bounds = L.latLngBounds(points);
+        if (!bounds.isValid()) return;
+        targetMap.fitBounds(bounds, {
+          padding: options.padding || [25, 25],
+          animate: false,
+          maxZoom: options.maxZoom,
+        });
+      }
+      function refitPrintMaps() {
+        printMaps.forEach((printMap) => printMap.invalidateSize());
+        printMapFitData.forEach(({ map, points, options }) => {
+          fitPrintMapToPoints(map, points, options);
+        });
+      }
+      function addPrintBaseLayers(targetMap) {
+        L.tileLayer(
+          "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+          { attribution: "Tiles &copy; Esri", maxZoom: 18 },
+        ).addTo(targetMap);
+        L.tileLayer(
+          "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",
+          {
+            attribution: "&copy; OSM & CARTO",
+            maxZoom: 18,
+            subdomains: "abcd",
+          },
+        ).addTo(targetMap);
+      }
+      function hasSegmentCoordinates(seg) {
+        return (
+          Number.isFinite(Number(seg.latStart)) &&
+          Number.isFinite(Number(seg.lngStart)) &&
+          Number.isFinite(Number(seg.latDest)) &&
+          Number.isFinite(Number(seg.lngDest))
+        );
+      }
+      function destroyPrintMaps() {
+        printMaps.forEach((printMap) => printMap.remove());
+        printMaps = [];
+        printMapFitData = [];
+      }
+      async function buildPrintMapReport() {
+        destroyPrintMaps();
+        const report = document.getElementById("printMapReport");
+        const tripName =
+          document.getElementById("holidayNameInput").value || "Trip Planner";
+        const printableSegments = segments.filter(hasSegmentCoordinates);
+
+        report.innerHTML = `<h1>${escapeHtml(tripName)}</h1><h2>Full trip map</h2><div id="printFullMap" class="print-map-full"></div><div id="printLegMaps"></div>`;
+
+        const fullMap = L.map("printFullMap", {
+          zoomControl: false,
+          attributionControl: false,
+        });
+        printMaps.push(fullMap);
+        addPrintBaseLayers(fullMap);
+
+        const allFullPoints = [];
+        for (const seg of printableSegments) {
+          const start = [seg.latStart, seg.lngStart];
+          const end = [seg.latDest, seg.lngDest];
+          L.marker(start).bindTooltip(seg.startName).addTo(fullMap);
+          L.marker(end).bindTooltip(seg.destName).addTo(fullMap);
+          const route = await getRouteForSegment(
+            seg,
+            segments.findIndex((s) => s.id === seg.id),
+          );
+          if (route) L.polyline(route, getRouteStyle(seg)).addTo(fullMap);
+          allFullPoints.push(
+            ...collectMapBoundsPoints(start, end, route),
+          );
+        }
+        printMapFitData.push({
+          map: fullMap,
+          points: allFullPoints,
+          options: { padding: [25, 25], maxZoom: 12 },
+        });
+
+        const legMaps = document.getElementById("printLegMaps");
+        let legHtml = "";
+        for (let i = 0; i < printableSegments.length; i += 2) {
+          legHtml += '<div class="print-leg-row">';
+          printableSegments.slice(i, i + 2).forEach((seg, offset) => {
+            const legNumber = i + offset + 1;
+            legHtml += `<section class="print-leg"><h3>Leg ${legNumber}: ${escapeHtml(seg.startName || "?")} to ${escapeHtml(seg.destName || "?")}</h3><p>${formatDateToDMY(seg.arrivalDate)} to ${formatDateToDMY(seg.departureDate)} &middot; ${seg.nights || 0} nights &middot; ${String(seg.travelMode || "tba").toUpperCase()}</p><div id="printLegMap_${seg.id}" class="print-leg-map"></div></section>`;
+          });
+          legHtml += "</div>";
+        }
+        legMaps.innerHTML = legHtml;
+
+        for (const seg of printableSegments) {
+          const legMap = L.map(`printLegMap_${seg.id}`, {
+            zoomControl: false,
+            attributionControl: false,
+          });
+          printMaps.push(legMap);
+          addPrintBaseLayers(legMap);
+
+          const start = [seg.latStart, seg.lngStart];
+          const end = [seg.latDest, seg.lngDest];
+          L.marker(start).bindTooltip(seg.startName).addTo(legMap);
+          L.marker(end).bindTooltip(seg.destName).addTo(legMap);
+          const route = await getRouteForSegment(
+            seg,
+            segments.findIndex((s) => s.id === seg.id),
+          );
+          if (route) L.polyline(route, getRouteStyle(seg)).addTo(legMap);
+          printMapFitData.push({
+            map: legMap,
+            points: collectMapBoundsPoints(start, end, route),
+            options: { padding: [25, 25] },
+          });
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        refitPrintMaps();
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        refitPrintMaps();
+      }
+      async function printItinerary() {
+        await buildPrintMapReport();
+        refitPrintMaps();
+        window.print();
+      }
+      window.updateSegmentField = updateSegmentField;
+      window.removeSegment = removeSegment;
+      window.formatDateToDMY = formatDateToDMY;
+      window.openNotesModal = openNotesModal;
+      window.toggleLegBookingStatus = toggleLegBookingStatus;
+      document.getElementById("saveJsonBtn").onclick = exportToJSON;
+      document.getElementById("resetBtn").onclick = resetPlanner;
+      document.getElementById("addSegmentBtn").onclick = addSegment;
+      document.getElementById("printBtn").onclick = printItinerary;
+      window.addEventListener("beforeprint", () => {
+        if (printMapFitData.length) refitPrintMaps();
+      });
+      document.getElementById("zoomToFitBtn").onclick = zoomToFitAllPoints;
+      document.getElementById("loadFileInput").onchange = (e) => {
+        if (e.target.files[0]) importJSON(e.target.files[0]);
+        e.target.value = "";
+      };
+      document.getElementById("holidayNameInput").oninput = (e) => {
+        holidayName = e.target.value;
+        saveToLocalStorage();
+      };
+      document.getElementById("closeModalBtn").onclick = closeNotesModal;
+      document.getElementById("cancelNotesBtn").onclick = closeNotesModal;
+      document.getElementById("saveNotesBtn").onclick = saveCurrentNotes;
+      document.getElementById("toggleViewBtn").onclick = toggleCompactView;
+      window.addEventListener("beforeunload", () => saveToLocalStorage());
+      window.addEventListener("DOMContentLoaded", async () => {
+        initMap();
+        await loadFromLocalStorage();
+        if (segments.length === 0) {
+          renderItinerary();
+        }
+      });
+      function escapeHtml(str) {
+        return (
+          str?.replace(
+            /[&<>]/g,
+            (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[m],
+          ) || ""
+        );
+      }
+    </script>
+    <div class="app-version">v2608.03F</div>
+  </body>
+</html>
