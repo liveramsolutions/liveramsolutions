@@ -1347,6 +1347,7 @@ async function openJSONFile() {
 }
 function resetPlanner() {
   if (confirm("⚠️ RESET ALL? This will delete your itinerary.")) {
+    currentFileHandle = null;
     sessionStorage.removeItem("wanderplan_session");
     segments = [];
     nextId = 1;
