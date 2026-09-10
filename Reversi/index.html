@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dark Reversi</title>
+    <!-- Created by Mark Livera 06-2026 -->
+    <link rel="stylesheet" href="../universalCSS/version.css">
+    <link rel="stylesheet" href="reversi.css" />
+  </head>
+  <body>
+    <div class="container">
+
+      <div id="game-layout">
+
+        <div class="left-panel">
+
+          <div id="setup-screen" class="panel">
+            <header>
+              <h1>Reversi</h1>
+            </header>
+
+            <div class="input-group">
+              <label for="game-mode">Game Mode:</label>
+              <select
+                id="game-mode"
+                style="
+                  background: #21262d;
+                  border: 1px solid #30363d;
+                  color: var(--text-main);
+                  padding: 12px;
+                  border-radius: 6px;
+                  font-size: 1rem;
+                  outline: none;
+                "
+              >
+                <option value="2player">2 Players</option>
+                <option value="1player">1 Player vs AndI</option>
+              </select>
+            </div>
+
+            <div class="input-group" id="player1-group">
+              <label for="player1">Player 1 (Black Discs):</label>
+              <input
+                type="text"
+                id="player1"
+                placeholder="Player 1"
+                max-length="15"
+              />
+            </div>
+
+            <div class="input-group" id="player2-group">
+              <label for="player2">Player 2 (White Discs):</label>
+              <input
+                type="text"
+                id="player2"
+                placeholder="Player 2"
+                max-length="15"
+              />
+            </div>
+
+            <div class="input-group hidden" id="difficulty-group">
+              <label for="difficulty">AndI Difficulty:</label>
+              <select
+                id="difficulty"
+                style="
+                  background: #21262d;
+                  border: 1px solid #30363d;
+                  color: var(--text-main);
+                  padding: 12px;
+                  border-radius: 6px;
+                  font-size: 1rem;
+                  outline: none;
+                "
+              >
+                <option value="easy">Easy (Random)</option>
+                <option value="medium" selected>Medium (Greedy)</option>
+                <option value="hard">Hard (Minimax)</option>
+              </select>
+            </div>
+
+            <button id="start-btn">Start Game</button>
+          </div>
+
+          <div id="game-screen" class="hidden">
+
+            <div class="game-info panel">
+              <header>
+                <h1>Reversi</h1>
+              </header>
+
+              <div class="hud">
+                <div id="card-black" class="player-card">
+                  <div id="name-black" style="font-weight: bold; margin-bottom: 4px">
+                    Black
+                  </div>
+                  <div>
+                    <span class="score-disc b"></span>Score:
+                    <span id="score-black">2</span>
+                  </div>
+                </div>
+
+                <div class="vs">VS</div>
+
+                <div id="card-white" class="player-card">
+                  <div id="name-white" style="font-weight: bold; margin-bottom: 4px">
+                    White
+                  </div>
+                  <div>
+                    <span class="score-disc w"></span>Score:
+                    <span id="score-white">2</span>
+                  </div>
+                </div>
+              </div>
+
+              <div id="message" class="message-banner"></div>
+
+              <button id="restart-btn" class="hidden">
+                Play Again
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="board-container">
+          <div id="board" class="board">
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <script src="reversi.js"></script>
+    <div class="app-version">v260601A</div>
+  </body>
+</html>

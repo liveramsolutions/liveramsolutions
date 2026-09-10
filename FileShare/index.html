@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexusDrop | P2P Share</title>
+    <link rel="stylesheet" href="Fileshare.css">
+    <!-- Created by Mark Livera 2026 -->
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <link rel="stylesheet" href="../universalCSS/version.css">
+
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Nexus<span>Drop</span></h1>
+        <p class="tagline">Serverless P2P File Transfer</p>
+
+        <!-- Dynamic Identification Box -->
+        <div class="status-box">
+            <div class="id-label">Your Device Key</div>
+            <div id="myIdDisplay" class="my-id">Generating...</div>
+            <div class="id-label pairing-label">Pairing Code</div>
+            <div id="pairingCodeDisplay" class="my-id">Generating...</div>
+        </div>
+
+        <!-- Target Entry Box -->
+        <div class="connect-section" id="setupSection">
+            <input type="text" id="targetIdInput" placeholder="Enter remote Device Key">
+            <input type="text" id="pairingCodeInput" placeholder="Enter Pairing Code" inputmode="numeric" maxlength="6">
+            <div id="authStatus"></div>
+            <button class="btn-connect" onclick="connectToPeer()">Connect Device</button>
+        </div>
+
+        <!-- Transfer Panel (Hidden until Connected) -->
+        <div class="transfer-section" id="transferSection">
+            <div class="connected-heading">✓ Link Established</div>
+            <label for="fileInput" class="file-label">Choose & Send File</label>
+            <input type="file" id="fileInput" onchange="sendFile()">
+            <div id="transferStatus"></div>
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div id="progressText">0%</div>
+            <button id="cancelTransferButton" class="btn-cancel" type="button">Cancel Transfer</button>
+            <button id="disconnectButton" class="btn-disconnect" type="button"
+                onclick="disconnectDevice()">Disconnect</button>
+            <a id="downloadLink">Download Received File</a>
+        </div>
+
+        <!-- Real-time Feedback Status -->
+        <div id="log">Connecting to signalling network...</div>
+    </div>
+
+    <script src="Fileshare.js"></script>
+    <div class="app-version">v2609.01B</div>
+</body>
+
+</html>
