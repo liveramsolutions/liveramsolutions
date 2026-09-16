@@ -1510,7 +1510,7 @@ const itineraryItems = segments
     legHtml += '<div class="print-leg-row">';
     printableSegments.slice(i, i + 2).forEach((seg, offset) => {
       const legNumber = i + offset + 1;
-      legHtml += `<section class="print-leg"><h3>Leg ${legNumber}: ${escapeHtml(seg.startName || "?")} to ${escapeHtml(seg.destName || "?")}</h3><p>${formatDateToDMY(seg.arrivalDate)} to ${formatDateToDMY(seg.departureDate)} &middot; ${seg.nights || 0} nights &middot; ${String(seg.travelMode || "tba").toUpperCase()}</p><div id="printLegMap_${seg.id}" class="print-leg-map"></div></section>`;legHtml += `<section class="print-leg"><h3>Leg ${legNumber}: ${escapeHtml(seg.startName || "?")} ${seg.nights || 0} nights</h3><p>${formatDateToDMY(seg.arrivalDate)} to ${formatDateToDMY(seg.departureDate)} &middot; Next Destination ${escapeHtml(seg.destName || "?")} via ${String(seg.travelMode || "tba").toUpperCase()}</p><div id="printLegMap_${seg.id}" class="print-leg-map"></div></section>`;
+      legHtml += `<section class="print-leg"><h3>Leg ${legNumber}: ${escapeHtml(seg.startName || "?")} ${seg.nights || 0} nights</h3><p>${formatDateToDMY(seg.arrivalDate)} to ${formatDateToDMY(seg.departureDate)} &middot; Next Destination ${escapeHtml(seg.destName || "?")} via ${String(seg.travelMode || "tba").toUpperCase()}</p><div id="printLegMap_${seg.id}" class="print-leg-map"></div></section>`;
     });
     legHtml += "</div>";
   }
