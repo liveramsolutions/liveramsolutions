@@ -969,7 +969,7 @@ function renderItinerary() {
               seg.notes && seg.notes.trim()
                 ? `<span class="notes-indicator" title="Notes available"><i class="fas fa-paperclip"></i></span>`
                 : "";*/
-      html += `<div class="itinerary-item ${getLegStatusClass(seg)}" data-leg-id="${seg.id}"><div style="display:flex; justify-content:space-between; margin-bottom:6px;"><strong>Leg ${idx + 1}</strong><div class="leg-actions">${getBookingToggleHtml(seg)}<button class="notes-btn${seg.notes && seg.notes.trim() ? " planned" : ""}" onclick="event.stopPropagation(); openNotesModal(${seg.id})"><i class="fas ${seg.notes && seg.notes.trim() ? "fa-paperclip" : "fa-sticky-note"}"></i> Notes</button><button class="remove-btn" onclick="event.stopPropagation(); removeSegment(${seg.id})"><i class="fas fa-trash-alt"></i> Remove</button></div></div><div class="flex-row"><div class="field"><label>📍Arrive</label><input type="text" id="start_input_${seg.id}" value="${escapeHtml(seg.startName)}" placeholder="City"></div><div class="field"><label>🏝️ Depart To</label><input type="text" id="dest_input_${seg.id}" value="${escapeHtml(seg.destName)}" placeholder="Destination"></div></div><div class="flex-row">
+      html += `<div class="itinerary-item ${getLegStatusClass(seg)}" data-leg-id="${seg.id}"><div style="display:flex; justify-content:space-between; margin-bottom:6px;"><strong>Leg ${idx + 1}</strong><div class="leg-actions">${getBookingToggleHtml(seg)}<button class="notes-btn${seg.notes && seg.notes.trim() ? " planned" : ""}" onclick="event.stopPropagation(); openNotesModal(${seg.id})"><i class="fas ${seg.notes && seg.notes.trim() ? "fa-paperclip" : "fa-sticky-note"}"></i> Notes</button><button class="remove-btn" onclick="event.stopPropagation(); removeSegment(${seg.id})"><i class="fas fa-trash-alt"></i> Remove</button></div></div><div class="flex-row"><div class="field"><label>📍${idx === 0 ? "Arrive" : "Stay In"}</label><input type="text" id="start_input_${seg.id}" value="${escapeHtml(seg.startName)}" placeholder="City"></div><div class="field"><label>🏝️ ${idx === segments.length - 1 ? "Return To" : "Depart To"}</label><input type="text" id="dest_input_${seg.id}" value="${escapeHtml(seg.destName)}" placeholder="Destination"></div></div><div class="flex-row">
 
 <div class="field">
     <label>
@@ -1461,12 +1461,12 @@ async function buildPrintMapReport() {
   const tripName =
     document.getElementById("holidayNameInput").value || "Trip Planner";
   const printableSegments = segments.filter(hasSegmentCoordinates);
-  const itineraryItems = segments
-    .map(
-      (seg, index) =>
-        `<li><strong>Leg ${index + 1}:</strong> ${escapeHtml(seg.startName || "?")} to ${escapeHtml(seg.destName || "?")} — ${formatDateToDMY(seg.arrivalDate)} to ${formatDateToDMY(seg.departureDate)} · ${seg.nights || 0} nights · ${String(seg.travelMode || "tba").toUpperCase()}</li>`,
-    )
-    .join("");
+const itineraryItems = segments
+  .map(
+    (seg, index) =>
+      `<li><strong>Leg ${index + 1}:</strong> ${escapeHtml(seg.startName || "?")} — ${formatDateToDMY(seg.arrivalDate)} to ${formatDateToDMY(seg.departureDate)} · ${seg.nights || 0} nights Next ${escapeHtml(seg.destName || "?")} via ${String(seg.travelMode || "tba").toUpperCase()}</li>`,
+  )
+  .join("");
 
   report.classList.add("print-preparing");
   report.innerHTML = `<h1>${escapeHtml(tripName)}</h1><h2>Full trip map</h2><div id="printFullMap" class="print-map-full"></div><section class="print-itinerary-summary"><h2>Full itinerary</h2><ol>${itineraryItems}</ol></section><div id="printLegMaps"></div>`;
@@ -1510,7 +1510,7 @@ async function buildPrintMapReport() {
     legHtml += '<div class="print-leg-row">';
     printableSegments.slice(i, i + 2).forEach((seg, offset) => {
       const legNumber = i + offset + 1;
-      legHtml += `<section class="print-leg"><h3>Leg ${legNumber}: ${escapeHtml(seg.startName || "?")} to ${escapeHtml(seg.destName || "?")}</h3><p>${formatDateToDMY(seg.arrivalDate)} to ${formatDateToDMY(seg.departureDate)} &middot; ${seg.nights || 0} nights &middot; ${String(seg.travelMode || "tba").toUpperCase()}</p><div id="printLegMap_${seg.id}" class="print-leg-map"></div></section>`;
+      legHtml += `<section class="print-leg"><h3>Leg ${legNumber}: ${escapeHtml(seg.startName || "?")} to ${escapeHtml(seg.destName || "?")}</h3><p>${formatDateToDMY(seg.arrivalDate)} to ${formatDateToDMY(seg.departureDate)} &middot; ${seg.nights || 0} nights &middot; ${String(seg.travelMode || "tba").toUpperCase()}</p><div id="printLegMap_${seg.id}" class="print-leg-map"></div></section>`;legHtml += `<section class="print-leg"><h3>Leg ${legNumber}: ${escapeHtml(seg.startName || "?")} ${seg.nights || 0} nights</h3><p>${formatDateToDMY(seg.arrivalDate)} to ${formatDateToDMY(seg.departureDate)} &middot; Next Destination ${escapeHtml(seg.destName || "?")} via ${String(seg.travelMode || "tba").toUpperCase()}</p><div id="printLegMap_${seg.id}" class="print-leg-map"></div></section>`;
     });
     legHtml += "</div>";
   }
