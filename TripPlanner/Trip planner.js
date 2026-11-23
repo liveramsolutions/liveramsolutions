@@ -1103,7 +1103,7 @@ function initMap() {
     { attribution: "Tiles &copy; Esri", maxZoom: 18 },
   ).addTo(map);
   L.tileLayer(
-    "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",
+    "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png?cb1_5ebo_1_936492dc5a09094e195a14bf",
     {
       attribution: "&copy; OSM & CARTO",
       maxZoom: 18,
@@ -1410,7 +1410,7 @@ function addPrintBaseLayers(targetMap) {
     },
   ).addTo(targetMap);
   const labelsLayer = L.tileLayer(
-    "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",
+    "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png?cb1_5ebo_1_936492dc5a09094e195a14bf",
     {
       attribution: "&copy; OSM & CARTO",
       maxZoom: 18,
